@@ -5,6 +5,9 @@
         <RouterLink to="/" class="nav-link" active-class="nav-active">推荐</RouterLink>
         <RouterLink to="/search" class="nav-link" active-class="nav-active">查找</RouterLink>
         <RouterLink to="/myhome" class="nav-link" active-class="nav-active">我的主页</RouterLink>
+        <RouterLink to="/user/87654321" class="nav-link" active-class="nav-active"
+          >达人主页</RouterLink
+        >
       </nav>
     </aside>
     <main>
@@ -23,19 +26,27 @@
       <div class="main-content">
         <RouterView />
       </div>
+      <DetailView.default v-if="showDetail" :id="detailId" />
     </main>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
-import { RouterLink, RouterView, useRouter } from 'vue-router'
+import { ref, computed } from 'vue'
+import { RouterLink, RouterView, useRouter, useRoute } from 'vue-router'
+import * as DetailView from './views/DetailView.vue'
 const router = useRouter()
+const route = useRoute()
 
 const keyword = ref('')
 function onSearch() {
   router.push({ path: '/search', query: { keyword: keyword.value } })
 }
+
+// 判断当前是否有 detail 查询参数来显示弹窗
+const showDetail = computed(() => !!route.query.detail)
+// 获取详情 ID
+const detailId = computed(() => route.query.detail)
 </script>
 
 <style scoped>

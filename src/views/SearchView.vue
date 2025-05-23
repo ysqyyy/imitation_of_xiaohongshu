@@ -1,5 +1,5 @@
 <template>
-  <div class="search-page">
+  <div class="layout">
     <!-- 分类标签 -->
     <div class="category-bar">
       <span
@@ -13,11 +13,11 @@
     </div>
     <!-- 帖子列表 -->
     <div class="posts-list">
-      <div class="post-card" v-for="(post, idx) in filteredPosts" :key="idx">
+      <div class="post-card" v-for="(post, idx) in filteredPosts" :key="idx" @click="goDetail(idx)">
         <div class="post-img-wrap">
           <img :src="post.img" class="post-img" alt="帖子图片" />
         </div>
-        <div class="post-desc">{{ post.desc }}</div>
+        <div class="post-desc">{{ post.title }}</div>
         <div class="post-meta">
           <span class="post-author">{{ post.author }}</span>
           <span class="post-like">♡ {{ post.like }}</span>
@@ -31,58 +31,41 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import request from '../utils/request'
+import { fetchPosts } from '../api/search'
+import { goDetail } from '../api/detail'
+import type { PostCard } from '../types/user'
 
 const categories = ['全部', '美食', '旅行', '穿搭', '数码', '学习', '娱乐', '生活']
 const activeCategory = ref(0)
 const keyword = ref('')
-interface Post {
-  img: string
-  desc: string
-  author: string
-  like: number
-  category: string
-}
 
-const posts = ref<Post[]>([])
+const posts = ref<PostCard[]>([])
 
 // 获取路由参数，实现从App.vue跳转带关键词自动搜索
 const route = useRoute()
 
-onMounted(() => {
+onMounted(async () => {
   if (route.query.keyword) {
     keyword.value = String(route.query.keyword)
   }
-  fetchPosts()
+  posts.value = await fetchPosts(keyword.value)
 })
 
 // 监听路由 keyword 变化，自动刷新数据
 watch(
   () => route.query.keyword,
-  (newKeyword, oldKeyword) => {
+  async (newKeyword, oldKeyword) => {
     if (newKeyword !== oldKeyword) {
       keyword.value = String(newKeyword || '')
-      fetchPosts()
+      posts.value = await fetchPosts(keyword.value)
     }
   },
 )
 
-function fetchPosts() {
-  request
-    .get('/posts/search', { params: { keyword: keyword.value } })
-    .then((res) => {
-      posts.value = res.data
-    })
-    .catch((err) => {
-      posts.value = []
-      console.error('搜索失败', err)
-    })
-}
-
 const filteredPosts = computed(() => {
   let result = posts.value
   if (activeCategory.value !== 0) {
-    result = result.filter((p) => p.category === categories[activeCategory.value])
+    result = result.filter((p) => p.tabs?.[0] === categories[activeCategory.value])
   }
   return result
 })
@@ -93,7 +76,9 @@ function selectCategory(idx: number) {
 </script>
 
 <style scoped>
-.search-page {
+.layout {
+  display: flex;
+  flex-direction: column;
   max-width: 900px;
   margin: 0 auto;
   padding: 2.5rem 1.5rem;

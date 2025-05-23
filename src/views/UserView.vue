@@ -1,11 +1,19 @@
 <template>
   <div class="layout">
     <main>
+      <!-- 个人信息区 -->
       <section class="user-section">
         <img class="avatar" :src="user.img || defaultAvatar" alt="头像" />
         <div class="user-info">
           <div class="name-action">
             <h2>{{ user.name }}</h2>
+            <button
+              class="follow-button"
+              :class="{ 'is-followed': user.isFollowed }"
+              @click="toggleFollow"
+            >
+              {{ user.isFollowed ? '已关注' : '关注' }}
+            </button>
           </div>
           <div class="user-id">小红书号：{{ user.id }}</div>
           <div class="user-desc">{{ user.desc }}</div>
@@ -17,6 +25,7 @@
         </div>
       </section>
 
+      <!-- 帖子列表 -->
       <section class="posts-section">
         <div class="tabs">
           <span
@@ -29,6 +38,7 @@
             {{ tab.label }}
           </span>
         </div>
+
         <PostList :posts="posts" :emptyText="getEmptyText()" @like="likePost" />
       </section>
     </main>
@@ -36,12 +46,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import type { UserInfo, PostCard } from '../types/user'
-import { getUserInfo } from '../api/myhome'
+import { getOtherUserInfo, followUser, unfollowUser } from '../api/myhome'
 import PostList from '../components/PostList.vue'
 
-const defaultAvatar = '/src/assets/logo.svg'
+const route = useRoute()
+const userId = computed(() => route.params.id as string)
+const defaultAvatar =
+  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop'
 
 // 用户信息响应式数据
 const user = ref<UserInfo>({
@@ -52,63 +66,64 @@ const user = ref<UserInfo>({
   follow: 0,
   fans: 0,
   likes: 0,
+  isFollowed: false,
   myPosts: [],
-  favPosts: [],
   likedPosts: [],
+  favPosts: [],
 })
-// 标签页响应式数据
-const tabs = ref([
-  { label: '我的笔记', key: 'note' },
-  { label: '点赞', key: 'like' },
-  { label: '收藏', key: 'fav' },
-])
-const activeTab = ref('note')
-function selectTab(tabKey: string) {
-  activeTab.value = tabKey
-  if (userCache) {
-    posts.value = getPostsByTab(userCache, tabKey)
-  }
-}
 
-// 帖子响应式数据
+// 标签页配置
+const tabs = ref([{ label: 'TA的笔记', key: 'note' }])
+const activeTab = ref('note')
 const posts = ref<PostCard[]>([])
 
 // 获取用户信息
-let userCache: UserInfo | null = null
 onMounted(async () => {
-  const userData = await getUserInfo()
-  userCache = userData
-  user.value = {
-    id: userData.id,
-    img: defaultAvatar,
-    name: userData.name,
-    desc: userData.desc,
-    follow: userData.follow,
-    fans: userData.fans,
-    likes: userData.likes,
-    myPosts: userData.myPosts || [],
-    favPosts: userData.favPosts || [],
-    likedPosts: userData.likedPosts || [],
+  try {
+    const userData = await getOtherUserInfo(userId.value)
+    user.value = {
+      ...userData,
+      img: userData.img || defaultAvatar,
+    }
+
+    if (userData.myPosts && userData.myPosts.length > 0) {
+      posts.value = userData.myPosts
+    }
+  } catch (error) {
+    console.error('获取用户信息失败:', error)
   }
-  posts.value = getPostsByTab(user.value, activeTab.value)
 })
 
-function getPostsByTab(user: UserInfo, tab: string) {
-  if (tab === 'note') return user.myPosts || []
-  if (tab === 'fav') return user.favPosts || []
-  if (tab === 'like') return user.likedPosts || []
-  return []
+function selectTab(tabKey: string) {
+  activeTab.value = tabKey
+}
+
+// 关注/取消关注用户
+async function toggleFollow() {
+  try {
+    if (user.value.isFollowed) {
+      await unfollowUser(userId.value)
+      user.value.isFollowed = false
+      if (user.value.fans > 0) {
+        user.value.fans--
+      }
+    } else {
+      await followUser(parseInt(userId.value))
+      user.value.isFollowed = true
+      user.value.fans++
+    }
+  } catch (error) {
+    console.error('关注操作失败:', error)
+  }
 }
 
 // 获取空状态文本
 function getEmptyText() {
   if (activeTab.value === 'note') return '笔记'
-  if (activeTab.value === 'fav') return '收藏'
-  if (activeTab.value === 'like') return '点赞'
   return '内容'
 }
 
-// 点赞按钮事件
+// 点赞帖子
 function likePost(post: PostCard) {
   post.like++
 }
@@ -119,82 +134,92 @@ function likePost(post: PostCard) {
   display: flex;
   height: 100%;
   background: #fff;
-  gap: 2.5rem; /* 增加主内容区与侧边栏间距 */
+  gap: 2.5rem;
 }
-.logo {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #ff2d55;
-  margin-bottom: 2rem;
-}
-.nav-list {
-  width: 100%;
-}
-.icon {
-  margin-right: 0.7rem;
-  font-size: 1.2rem;
-}
+
 main {
   flex: 1;
   padding: 3rem 4rem;
   min-width: 70vw;
 }
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 2rem;
-}
-.header-links a {
-  margin-left: 1.5rem;
-  color: #888;
-  text-decoration: none;
-  font-size: 1rem;
-}
-.header-links a:hover {
-  color: #ff2d55;
-}
+
+/* 个人信息区域 */
 .user-section {
   display: flex;
   align-items: center;
   margin-bottom: 3rem;
 }
+
 .avatar {
   width: 100px;
   height: 100px;
   border-radius: 50%;
   margin-right: 2rem;
   border: 2px solid #f7f7f7;
+  object-fit: cover;
 }
+
 .user-info h2 {
   margin: 0 0 0.5rem 0;
   font-size: 1.5rem;
 }
+
+.name-action {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.follow-button {
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.3s;
+  background: #ff2d55;
+  color: white;
+  border: 1px solid #ff2d55;
+}
+
+.follow-button.is-followed {
+  background: white;
+  color: #ff2d55;
+}
+
 .user-id {
   color: #aaa;
   font-size: 0.95rem;
   margin-bottom: 0.5rem;
 }
+
 .user-desc {
   color: #666;
   margin-bottom: 0.7rem;
 }
+
 .user-stats {
   color: #888;
   font-size: 0.95rem;
   display: flex;
   gap: 1.5rem;
 }
+
+/* 帖子区域 */
 .posts-section {
   background: #fafbfc;
   border-radius: 14px;
   padding: 2.5rem 2rem 2rem 2rem;
+  min-height: 400px;
 }
+
 .tabs {
   display: flex;
   gap: 2.5rem;
   margin-bottom: 2rem;
 }
+
 .tab {
   font-size: 1.1rem;
   color: #888;
@@ -205,8 +230,43 @@ main {
     color 0.2s,
     border 0.2s;
 }
+
 .tab.active {
   color: #ff2d55;
   border-bottom: 2px solid #ff2d55;
+}
+
+/* 响应式布局 */
+@media (max-width: 900px) {
+  main {
+    padding: 1.2rem;
+  }
+
+  .post-card {
+    width: 90vw;
+    min-width: 140px;
+  }
+
+  .posts-list {
+    gap: 1.2rem 1.2rem;
+  }
+
+  .user-section {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .avatar {
+    margin-right: 0;
+    margin-bottom: 1rem;
+  }
+
+  .name-action {
+    justify-content: center;
+  }
+
+  .user-stats {
+    justify-content: center;
+  }
 }
 </style>

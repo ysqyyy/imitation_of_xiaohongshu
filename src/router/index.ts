@@ -25,6 +25,13 @@ const router = createRouter({
       // which is lazy-loaded when the route is visited.
       component: () => import('../views/SearchView.vue'),
     },
+    {
+      path: '/user/:id',
+      name: 'user',
+      // 用户个人主页
+      component: () => import('../views/UserView.vue'),
+    },
+    // detail 不再是独立路由，改用 query 参数控制
   ],
 })
 

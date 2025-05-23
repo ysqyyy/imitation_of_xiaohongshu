@@ -11,3 +11,37 @@ export async function getUserInfo() {
     throw error
   }
 }
+
+// 获取其他用户的信息
+export async function getOtherUserInfo(userId: string) {
+  try {
+    const res = await request.get(`/user/${userId}`)
+    const user: UserInfo = res.data
+    return user
+  } catch (error) {
+    console.error('Error fetching other user info:', error)
+    throw error
+  }
+}
+
+// 关注用户
+export async function followUser(userId: number) {
+  try {
+    const res = await request.post('/user/follow', { userId })
+    return res
+  } catch (error) {
+    console.error('Error following user:', error)
+    throw error
+  }
+}
+
+// 取消关注用户
+export async function unfollowUser(userId: string) {
+  try {
+    const res = await request.post('/user/unfollow', { userId })
+    return res
+  } catch (error) {
+    console.error('Error unfollowing user:', error)
+    throw error
+  }
+}
