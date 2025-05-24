@@ -2,7 +2,7 @@ import request from '@/utils/request'
 import router from '@/router'
 import type { PostDetail } from '@/types/user'
 
-//点开帖子详情
+//点开帖子
 export function goDetail(id: number) {
   router.push({
     path: router.currentRoute.value.path,
@@ -22,11 +22,12 @@ export function closeDetail() {
     query,
   })
 }
-/**
- * 通过ID获取帖子详情
+
+/** 通过ID获取帖子详情
  * @param id 帖子ID
- * @returns Promise<Post | null> 返回帖子详情或null
+ * @return PostDetail 帖子详情
  */
+
 export async function getPostById(id: number): Promise<PostDetail | null> {
   try {
     const res = await request.get(`/detail/${id}`)
@@ -37,7 +38,12 @@ export async function getPostById(id: number): Promise<PostDetail | null> {
   }
 }
 
-//**发送评论 （帖子/评论）*/
+//**发送评论 （帖子/评论）
+/**
+ * @param id 帖子ID或评论ID
+ * @param content 评论内容
+ * @return 成功或失败信息
+ */
 export async function sendComment(id: number, content: string, type: string) {
   let res
   try {
@@ -52,10 +58,9 @@ export async function sendComment(id: number, content: string, type: string) {
   return res
 }
 
-/**
- * 点赞帖子
+/** 点赞帖子
  * @param id 帖子ID
- * @returns Promise 返回点赞结果
+ * @return 成功或失败信息
  */
 export async function likePost(id: number) {
   try {
@@ -67,10 +72,9 @@ export async function likePost(id: number) {
   }
 }
 
-/**
- * 收藏帖子
- * @param id 帖子ID
- * @returns Promise 返回收藏结果
+/**收藏帖子
+ ** @param id 帖子ID
+ * @return 成功或失败信息
  */
 export async function favoritePost(id: number) {
   try {

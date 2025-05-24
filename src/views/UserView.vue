@@ -37,7 +37,7 @@
             {{ tab.label }}
           </span>
         </div>
-        <PostList :posts="posts" :emptyText="getEmptyText()" />
+        <PostList :posts="posts" :emptyText="getEmptyText()" @like="handleLike" />
       </section>
     </main>
   </div>
@@ -49,6 +49,7 @@ import { useRoute } from 'vue-router'
 import type { UserInfo, PostCard } from '../types/user'
 import { getOtherUserInfo, followUser, unfollowUser } from '../api/user'
 import PostList from '../components/PostList.vue'
+import { likePost } from '../api/detail'
 
 const route = useRoute()
 const userId = computed(() => route.params.id as string)
@@ -119,6 +120,19 @@ async function toggleFollow() {
 function getEmptyText() {
   if (activeTab.value === 'note') return '笔记'
   return '内容'
+}
+
+// 处理点赞事件
+async function handleLike(post: PostCard) {
+  try {
+    const result = await likePost(post.id)
+    if (result) {
+      // 更新点赞数
+      post.like += 1
+    }
+  } catch (error) {
+    console.error('点赞操作失败:', error)
+  }
 }
 </script>
 

@@ -13,6 +13,10 @@ export async function getUserInfo() {
 }
 
 // 获取其他用户的信息ok
+/**
+ * @param userId 用户ID
+ * @return UserInfo 用户信息
+ */
 export async function getOtherUserInfo(userId: number) {
   try {
     const res = await request.get(`/user/${userId}`)
@@ -23,8 +27,11 @@ export async function getOtherUserInfo(userId: number) {
     throw error
   }
 }
-
 // 关注用户ok
+/**
+ * @param userId 用户ID
+ * @return 成功或失败信息
+ */
 export async function followUser(userId: number) {
   try {
     const res = await request.post('/user/follow', { userId })
@@ -34,11 +41,14 @@ export async function followUser(userId: number) {
     throw error
   }
 }
-
 // 取消关注用户ok
+/**
+ * @param userId 用户ID
+ * @return 成功或失败信息
+ */
 export async function unfollowUser(userId: number) {
   try {
-    const res = await request.post('/user/unfollow', { userId })
+    const res = await request.delete('/user/follow', { params: { userId } })
     return res
   } catch (error) {
     console.error('Error unfollowing user:', error)

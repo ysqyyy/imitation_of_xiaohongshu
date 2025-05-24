@@ -29,7 +29,7 @@
             {{ tab.label }}
           </span>
         </div>
-        <PostList :posts="posts" :emptyText="getEmptyText()" />
+        <PostList :posts="posts" :emptyText="getEmptyText()" @like="handleLike" />
       </section>
     </main>
   </div>
@@ -40,6 +40,7 @@ import { ref, onMounted } from 'vue'
 import type { UserInfo, PostCard } from '../types/user'
 import { getUserInfo } from '../api/user'
 import PostList from '../components/PostList.vue'
+import { likePost } from '../api/detail'
 
 const defaultAvatar = '/src/assets/logo.svg'
 
@@ -95,60 +96,110 @@ function getEmptyText() {
   if (activeTab.value === 'like') return '点赞'
   return '内容'
 }
+
+// 处理点赞事件
+async function handleLike(post: PostCard) {
+  try {
+    const result = await likePost(post.id)
+    if (result) {
+      // 更新点赞数
+      post.like += 1
+      
+      // 如果当前是在"点赞"标签页，需要更新用户的点赞列表
+      if (userCache && !userCache.likedPosts.some(p => p.id === post.id)) {
+        userCache.likedPosts.push(post)
+        
+        // 如果在"点赞"标签页，刷新显示
+        if (activeTab.value === 'like') {
+          posts.value = getPostsByTab(userCache, 'like')
+        }
+      }
+    }
+  } catch (error) {
+    console.error('点赞操作失败:', error)
+  }
+}
 </script>
 
 <style scoped>
-main {
+.layout {
   display: flex;
-  flex-direction: column;
-  flex: 1;
   height: 100%;
-  width: 100%;
   background: #fff;
-  padding: 3rem 4rem;
-  gap: 2.5rem; /* 增加主内容区与侧边栏间距 */
+  width: 100%;
+  overflow: auto;
 }
+
+main {
+  flex: 1;
+  padding: 3rem 4rem;
+  max-width: 1200px; /* 限制最大宽度 */
+  margin: 0 auto; /* 居中显示 */
+  width: 100%;
+}
+
+/* 个人信息区域 */
 .user-section {
   display: flex;
   align-items: center;
   margin-bottom: 3rem;
 }
+
 .avatar {
   width: 100px;
   height: 100px;
   border-radius: 50%;
   margin-right: 2rem;
   border: 2px solid #f7f7f7;
+  object-fit: cover;
 }
+
 .user-info h2 {
   margin: 0 0 0.5rem 0;
   font-size: 1.5rem;
 }
+
+.name-action {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
 .user-id {
   color: #aaa;
   font-size: 0.95rem;
   margin-bottom: 0.5rem;
 }
+
 .user-desc {
   color: #666;
   margin-bottom: 0.7rem;
 }
+
 .user-stats {
   color: #888;
   font-size: 0.95rem;
   display: flex;
   gap: 1.5rem;
 }
+
+/* 帖子区域 */
 .posts-section {
+  width: 100%;
   background: #fafbfc;
   border-radius: 14px;
-  padding: 2.5rem 2rem 2rem 2rem;
+  padding: 2rem 1.5rem 1.5rem 1.5rem; /* 减小内边距 */
+  min-height: 400px;
+  box-sizing: border-box; /* 确保内边距不会增加元素的总宽度 */
 }
+
 .tabs {
   display: flex;
   gap: 2.5rem;
   margin-bottom: 2rem;
 }
+
 .tab {
   font-size: 1.1rem;
   color: #888;
@@ -159,8 +210,47 @@ main {
     color 0.2s,
     border 0.2s;
 }
+
 .tab.active {
   color: #ff2d55;
   border-bottom: 2px solid #ff2d55;
+}
+
+/* 响应式布局 */
+@media (max-width: 900px) {
+  main {
+    padding: 1.2rem;
+    min-width: auto; /* 移除最小宽度限制 */
+  }
+
+  .posts-section {
+    padding: 1.5rem 1rem 1rem 1rem; /* 在小屏幕上进一步减小内边距 */
+  }
+
+  .post-card {
+    width: 100%;
+  }
+
+  .posts-list {
+    gap: 1rem;
+  }
+
+  .user-section {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .avatar {
+    margin-right: 0;
+    margin-bottom: 1rem;
+  }
+
+  .name-action {
+    justify-content: center;
+  }
+
+  .user-stats {
+    justify-content: center;
+  }
 }
 </style>

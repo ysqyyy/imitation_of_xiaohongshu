@@ -1,4 +1,4 @@
-// 帖子缩略图
+// 帖子缩略信息
 export type PostCard = {
   id: number
   img: string

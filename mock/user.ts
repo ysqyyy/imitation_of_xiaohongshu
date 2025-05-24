@@ -168,8 +168,8 @@ export default [
     },
   },
   {
-    url: '/api/user/unfollow',
-    method: 'post',
+    url: '/api/user/follow',
+    method: 'delete',
     response: () => {
       otherUserInfo.isFollowed = false
       if (otherUserInfo.fans > 0) otherUserInfo.fans -= 1

@@ -28,19 +28,14 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits } from 'vue'
+import { defineProps } from 'vue'
 import type { PostCard } from '../types/user'
-import { goDetail } from '../api/detail'
+import { goDetail, likePost } from '../api/detail'
 
 // 定义组件属性
 const props = defineProps<{
   posts: PostCard[]
   emptyText?: string
-}>()
-
-// 定义事件
-const emit = defineEmits<{
-  (e: 'like', post: PostCard): void
 }>()
 
 // 跳转到详情页
@@ -50,7 +45,7 @@ function handleGoDetail(id: number) {
 
 // 处理点赞事件
 function handleLikePost(post: PostCard) {
-  emit('like', post)
+  likePost(post.id)
 }
 </script>
 
