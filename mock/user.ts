@@ -1,5 +1,5 @@
 import type { MockMethod } from 'vite-plugin-mock'
-import type { UserInfo, PostCard, Author } from '../src/types/user'
+import type { UserInfo } from '../src/types/user'
 
 const userInfo: UserInfo = {
   name: '用户名',

@@ -25,7 +25,6 @@
         </div>
       </section>
 
-      <!-- 帖子列表 -->
       <section class="posts-section">
         <div class="tabs">
           <span
@@ -38,8 +37,7 @@
             {{ tab.label }}
           </span>
         </div>
-
-        <PostList :posts="posts" :emptyText="getEmptyText()" @like="likePost" />
+        <PostList :posts="posts" :emptyText="getEmptyText()" />
       </section>
     </main>
   </div>
@@ -49,7 +47,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import type { UserInfo, PostCard } from '../types/user'
-import { getOtherUserInfo, followUser, unfollowUser } from '../api/myhome'
+import { getOtherUserInfo, followUser, unfollowUser } from '../api/user'
 import PostList from '../components/PostList.vue'
 
 const route = useRoute()
@@ -80,7 +78,7 @@ const posts = ref<PostCard[]>([])
 // 获取用户信息
 onMounted(async () => {
   try {
-    const userData = await getOtherUserInfo(userId.value)
+    const userData = await getOtherUserInfo(Number(userId.value))
     user.value = {
       ...userData,
       img: userData.img || defaultAvatar,
@@ -102,13 +100,13 @@ function selectTab(tabKey: string) {
 async function toggleFollow() {
   try {
     if (user.value.isFollowed) {
-      await unfollowUser(userId.value)
+      await unfollowUser(Number(userId.value))
       user.value.isFollowed = false
       if (user.value.fans > 0) {
         user.value.fans--
       }
     } else {
-      await followUser(parseInt(userId.value))
+      await followUser(Number(userId.value))
       user.value.isFollowed = true
       user.value.fans++
     }
@@ -122,11 +120,6 @@ function getEmptyText() {
   if (activeTab.value === 'note') return '笔记'
   return '内容'
 }
-
-// 点赞帖子
-function likePost(post: PostCard) {
-  post.like++
-}
 </script>
 
 <style scoped>
@@ -134,13 +127,16 @@ function likePost(post: PostCard) {
   display: flex;
   height: 100%;
   background: #fff;
-  gap: 2.5rem;
+  width: 100%;
+  overflow-x: hidden; /* 防止水平溢出 */
 }
 
 main {
   flex: 1;
   padding: 3rem 4rem;
-  min-width: 70vw;
+  max-width: 1200px; /* 限制最大宽度 */
+  margin: 0 auto; /* 居中显示 */
+  width: 100%;
 }
 
 /* 个人信息区域 */
@@ -208,10 +204,12 @@ main {
 
 /* 帖子区域 */
 .posts-section {
+  width: 100%;
   background: #fafbfc;
   border-radius: 14px;
-  padding: 2.5rem 2rem 2rem 2rem;
+  padding: 2rem 1.5rem 1.5rem 1.5rem; /* 减小内边距 */
   min-height: 400px;
+  box-sizing: border-box; /* 确保内边距不会增加元素的总宽度 */
 }
 
 .tabs {
@@ -240,15 +238,19 @@ main {
 @media (max-width: 900px) {
   main {
     padding: 1.2rem;
+    min-width: auto; /* 移除最小宽度限制 */
+  }
+
+  .posts-section {
+    padding: 1.5rem 1rem 1rem 1rem; /* 在小屏幕上进一步减小内边距 */
   }
 
   .post-card {
-    width: 90vw;
-    min-width: 140px;
+    width: 100%;
   }
 
   .posts-list {
-    gap: 1.2rem 1.2rem;
+    gap: 1rem;
   }
 
   .user-section {

@@ -7,7 +7,7 @@ export function fetchPosts(keyword: string): Promise<PostCard[]> {
     .then((res: { data: PostCard[] }) => {
       return res.data
     })
-    .catch((err: any) => {
+    .catch((err) => {
       console.error('搜索失败', err)
       throw err
     })

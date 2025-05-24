@@ -2,13 +2,19 @@
   <div class="modal-mask" @click.self="close">
     <div class="detail-container">
       <!-- 左侧图片集 -->
-      <div class="image-gallery">
+      <div class="image">
         <!-- 主图 -->
-        <img :src="post.img" class="main-image" />
-        <!-- 缩略图集 (模拟多张图片) -->
+        <img :src="post.imgs[currentImgIndex]" class="main-image" />
+        <!-- 缩略图集 (显示所有图片) -->
         <div class="thumbnails">
-          <img :src="post.img" class="thumbnail active" />
-          <div v-for="i in 3" :key="i" class="thumbnail placeholder"></div>
+          <img
+            v-for="(img, id) in post.imgs"
+            :key="id"
+            :src="img"
+            class="thumbnail"
+            :class="{ active: id === currentImgIndex }"
+            @click="currentImgIndex = id"
+          />
         </div>
       </div>
 
@@ -16,7 +22,11 @@
       <div class="content-container">
         <!-- 作者信息 -->
         <div class="author-info">
-          <div class="avatar" :style="{ backgroundImage: `url(${authorAvatar})` }"></div>
+          <div
+            class="avatar"
+            :style="{ backgroundImage: `url(${post.author.img})` }"
+            @click="otherUser(post.author.id)"
+          ></div>
           <div class="author-name">{{ post.author.name || '用户' }}</div>
           <div class="follow-btn" @click="followUser(post.author.id)">关注</div>
         </div>
@@ -26,7 +36,8 @@
           <h2 class="post-title">{{ post.title }}</h2>
           <p class="post-text">{{ post.content }}</p>
           <div class="post-tags">
-            <span class="tag"># {{ post.tabs || '生活' }}</span>
+            <span v-for="(tab, index) in post.tabs" :key="index" class="tag"># {{ tab }}</span>
+            <span v-if="!post.tabs || post.tabs.length === 0" class="tag"># 生活</span>
           </div>
         </div>
 
@@ -36,29 +47,24 @@
 
           <!-- 评论列表 -->
           <div class="comment-list">
-            <div
-              v-for="comment in post.comments"
-              :key="comment.id"
-              :style="{ marginLeft: `${comment.level * 20}px` }"
-              class="comment-item"
-            >
+            <div v-for="comment in post.comments" :key="comment.id" class="comment-item">
               <div
                 class="comment-avatar"
                 :style="{ backgroundImage: `url(${comment.author.img})` }"
+                @click="otherUser(comment.author.id)"
               ></div>
               <div class="comment-content">
                 <div class="comment-user">{{ comment.author.name }}</div>
                 <div class="comment-text">{{ comment.content }}</div>
                 <div class="comment-actions">
                   <span class="time">{{ comment.time }}</span>
-                  <span class="like">赞 {{ comment.like }}</span>
-                  <span class="reply" @click="replyTo(comment)">回复</span>
+                  <span class="like">♥ {{ comment.like }}</span>
+                  <span class="reply" @click="replyComment(comment)">回复</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- 没有评论时的提示 -->
           <div v-if="post.comments?.length === 0" class="no-comments">暂无评论，快来抢沙发吧~</div>
         </div>
 
@@ -68,7 +74,7 @@
             <input
               v-model="commentText"
               class="comment-input"
-              :placeholder="replyTarget ? `回复 @${replyTarget.name}` : '说点什么...'"
+              :placeholder="replyTarget ? `回复 @${replyTarget.author.name}` : '说点什么...'"
             />
             <button class="send-btn" @click="submitComment">发送</button>
           </div>
@@ -76,20 +82,16 @@
           <!-- 互动按钮区 -->
           <div class="action-buttons">
             <div class="action-btn">
-              <i class="icon like-icon"></i>
+              <i class="icon like-icon" @click="sendLike(post.id)"></i>
               <span>{{ post.like }}</span>
             </div>
             <div class="action-btn">
-              <i class="icon fav-icon"></i>
+              <i class="icon fav-icon" @click="sendFav(post.id)"></i>
               <span>收藏</span>
             </div>
             <div class="action-btn">
-              <i class="icon comment-icon"></i>
+              <i class="icon comment-icon" @click="replyPost()"></i>
               <span>{{ commentCount }}</span>
-            </div>
-            <div class="action-btn">
-              <i class="icon share-icon"></i>
-              <span>分享</span>
             </div>
           </div>
         </footer>
@@ -102,13 +104,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import type { PostDetail, Comment } from '../types/user'
-import { closeDetail, getPostById, sendComment } from '../api/detail'
-import { followUser } from '../api/myhome'
+import { closeDetail, getPostById, sendComment, likePost, favoritePost } from '../api/detail'
+import { followUser } from '../api/user'
 import { useRouter } from 'vue-router'
 const router = useRouter()
-// 接收父组件传递的 id 参数
 const props = defineProps<{ id: string }>()
 
 const post = ref<PostDetail>({
@@ -133,11 +134,11 @@ const post = ref<PostDetail>({
 const commentText = ref('')
 const commentCount = ref(0)
 const replyTarget = ref<Comment | null>(null)
+const currentImgIndex = ref(0) // 当前显示的图片索引
 
 onMounted(async () => {
   if (props.id) {
-    const actualId = Array.isArray(props.id) ? props.id[0] : props.id
-    const result = await getPostById(Number(actualId))
+    const result = await getPostById(Number(props.id))
     if (result) {
       post.value = result
     } else {
@@ -146,36 +147,6 @@ onMounted(async () => {
     }
   }
 })
-// 计算评论数量
-watch(
-  () => post.value.comments ?? [],
-  (newComments) => {
-    commentCount.value = newComments.length
-  },
-  { immediate: true },
-)
-
-function close() {
-  // 使用 closeDetail 函数移除 query 参数
-  closeDetail()
-}
-
-// 回复评论功能 todo
-function replyTo(comment: Comment) {
-  replyTarget.value = comment
-  // 让输入框获取焦点
-  setTimeout(() => {
-    const input = document.querySelector('.comment-input') as HTMLInputElement
-    input?.focus()
-  }, 100)
-}
-
-// 提交帖子评论
-function submitComment() {
-  if (!commentText.value.trim()) return
-  sendComment(post.value.id, commentText.value, 'post')
-}
-
 // 监听 id 变化，以便在不同帖子间切换
 watch(
   () => props.id,
@@ -185,6 +156,75 @@ watch(
     }
   },
 )
+function close() {
+  closeDetail()
+}
+// 计算评论数量
+watch(
+  () => post.value.comments ?? [],
+  (newComments) => {
+    commentCount.value = newComments.length
+  },
+  { immediate: true },
+)
+// 点赞帖子
+async function sendLike(id: number) {
+  try {
+    const result = await likePost(id)
+    if (result) {
+      post.value.isLike = result.isLike
+      post.value.like = result.like
+    }
+  } catch (error) {
+    console.error('点赞操作失败:', error)
+    // 失败时回滚本地状态
+    post.value.isLike = !post.value.isLike
+    post.value.like += post.value.isLike ? 1 : -1
+  }
+}
+// 收藏帖子
+async function sendFav(id: number) {
+  try {
+    const result = await favoritePost(id)
+    if (result) {
+      post.value.isFav = result.isFav
+      post.value.fav = result.fav
+    }
+  } catch (error) {
+    console.error('收藏操作失败:', error)
+    // 失败时回滚本地状态
+    post.value.isFav = !post.value.isFav
+    post.value.fav += post.value.isFav ? 1 : -1
+  }
+}
+//回复帖子
+function replyPost() {
+  replyTarget.value = null
+  setTimeout(() => {
+    const input = document.querySelector('.comment-input') as HTMLInputElement
+    input?.focus()
+  }, 100)
+}
+// 回复评论
+function replyComment(comment: Comment) {
+  replyTarget.value = comment
+  setTimeout(() => {
+    const input = document.querySelector('.comment-input') as HTMLInputElement
+    input?.focus()
+  }, 100)
+}
+// 提交评论（评论/帖子）
+function submitComment() {
+  if (!commentText.value.trim()) return
+  if (replyTarget.value) {
+    sendComment(replyTarget.value.id, commentText.value, 'comment')
+    replyTarget.value = null
+  } else sendComment(post.value.id, commentText.value, 'post')
+}
+//点击他人头像
+function otherUser(id: number) {
+  router.push({ path: `/user/${id}` })
+}
 </script>
 
 <style scoped>
@@ -214,10 +254,11 @@ watch(
 }
 
 /* 左侧图片区域 */
-.image-gallery {
+.image {
   flex: 1;
+  height: 100%;
   min-width: 45%;
-  background: #000;
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
 }
@@ -232,7 +273,7 @@ watch(
 .thumbnails {
   height: 80px;
   display: flex;
-  background: #111;
+  background: rgba(0, 0, 0, 0.5);
   padding: 10px;
   gap: 8px;
 }
@@ -259,6 +300,7 @@ watch(
 /* 右侧内容区域 */
 .content-container {
   flex: 1;
+  height: 100%;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -282,13 +324,13 @@ watch(
   border-radius: 50%;
   background-size: cover;
   background-position: center;
-  margin-right: 12px;
+  margin-right: 2px;
+  cursor: pointer;
 }
 
 .author-name {
   font-weight: 600;
   font-size: 16px;
-  margin-bottom: 4px;
 }
 
 .follow-btn {
@@ -364,6 +406,7 @@ watch(
   background-size: cover;
   background-position: center;
   flex-shrink: 0;
+  cursor: pointer;
 }
 
 .comment-content {
@@ -468,17 +511,11 @@ footer {
 .like-icon {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23666'%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/%3E%3C/svg%3E");
 }
-
 .fav-icon {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23666'%3E%3Cpath d='M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z'/%3E%3C/svg%3E");
 }
-
 .comment-icon {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23666'%3E%3Cpath d='M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18zM18 14H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z'/%3E%3C/svg%3E");
-}
-
-.share-icon {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23666'%3E%3Cpath d='M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z'/%3E%3C/svg%3E");
 }
 
 /* 关闭按钮 */
@@ -504,32 +541,5 @@ footer {
 .close-btn:hover {
   background: #fff;
   color: #ff2d55;
-}
-
-/* 响应式调整 */
-@media (max-width: 768px) {
-  .detail-container {
-    flex-direction: column;
-    width: 95%;
-    height: 90vh;
-  }
-
-  .image-gallery {
-    min-width: 100%;
-    height: 40%;
-  }
-
-  .main-image {
-    height: calc(100% - 60px);
-  }
-
-  .thumbnails {
-    height: 60px;
-  }
-
-  .thumbnail {
-    height: 40px;
-    width: 40px;
-  }
 }
 </style>

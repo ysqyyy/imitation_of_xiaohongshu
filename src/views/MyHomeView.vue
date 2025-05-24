@@ -29,7 +29,7 @@
             {{ tab.label }}
           </span>
         </div>
-        <PostList :posts="posts" :emptyText="getEmptyText()" @like="likePost" />
+        <PostList :posts="posts" :emptyText="getEmptyText()" />
       </section>
     </main>
   </div>
@@ -38,7 +38,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import type { UserInfo, PostCard } from '../types/user'
-import { getUserInfo } from '../api/myhome'
+import { getUserInfo } from '../api/user'
 import PostList from '../components/PostList.vue'
 
 const defaultAvatar = '/src/assets/logo.svg'
@@ -72,24 +72,12 @@ function selectTab(tabKey: string) {
 
 // 帖子响应式数据
 const posts = ref<PostCard[]>([])
-
 // 获取用户信息
 let userCache: UserInfo | null = null
 onMounted(async () => {
   const userData = await getUserInfo()
   userCache = userData
-  user.value = {
-    id: userData.id,
-    img: defaultAvatar,
-    name: userData.name,
-    desc: userData.desc,
-    follow: userData.follow,
-    fans: userData.fans,
-    likes: userData.likes,
-    myPosts: userData.myPosts || [],
-    favPosts: userData.favPosts || [],
-    likedPosts: userData.likedPosts || [],
-  }
+  user.value = userData
   posts.value = getPostsByTab(user.value, activeTab.value)
 })
 
@@ -107,52 +95,18 @@ function getEmptyText() {
   if (activeTab.value === 'like') return '点赞'
   return '内容'
 }
-
-// 点赞按钮事件
-function likePost(post: PostCard) {
-  post.like++
-}
 </script>
 
 <style scoped>
-.layout {
-  display: flex;
-  height: 100%;
-  background: #fff;
-  gap: 2.5rem; /* 增加主内容区与侧边栏间距 */
-}
-.logo {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #ff2d55;
-  margin-bottom: 2rem;
-}
-.nav-list {
-  width: 100%;
-}
-.icon {
-  margin-right: 0.7rem;
-  font-size: 1.2rem;
-}
 main {
-  flex: 1;
-  padding: 3rem 4rem;
-  min-width: 70vw;
-}
-.header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 2rem;
-}
-.header-links a {
-  margin-left: 1.5rem;
-  color: #888;
-  text-decoration: none;
-  font-size: 1rem;
-}
-.header-links a:hover {
-  color: #ff2d55;
+  flex-direction: column;
+  flex: 1;
+  height: 100%;
+  width: 100%;
+  background: #fff;
+  padding: 3rem 4rem;
+  gap: 2.5rem; /* 增加主内容区与侧边栏间距 */
 }
 .user-section {
   display: flex;

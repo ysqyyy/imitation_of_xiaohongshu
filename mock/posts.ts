@@ -1,5 +1,5 @@
 import type { MockMethod } from 'vite-plugin-mock'
-import type { PostCard, Author } from '../src/types/user'
+import type { PostCard } from '../src/types/user'
 
 const posts: PostCard[] = [
   {
@@ -152,28 +152,6 @@ export default [
       const keyword = query.keyword || ''
       return {
         data: posts.filter((post) => post.title.includes(keyword)),
-      }
-    },
-  },
-  {
-    url: '/api/posts/:id',
-    method: 'get',
-    response: ({ query, params }: { query: any; params: { id: string } }) => {
-      const id = Number(params.id)
-      const post = posts.find((post) => post.id === id)
-
-      if (post) {
-        return {
-          code: 200,
-          data: post,
-          message: '获取帖子成功',
-        }
-      } else {
-        return {
-          code: 404,
-          data: null,
-          message: '帖子不存在',
-        }
       }
     },
   },

@@ -1,7 +1,8 @@
 import request from '@/utils/request'
 import router from '@/router'
-import type { PostCard, PostDetail } from '@/types/user'
+import type { PostDetail } from '@/types/user'
 
+//点开帖子详情
 export function goDetail(id: number) {
   router.push({
     path: router.currentRoute.value.path,
@@ -28,7 +29,6 @@ export function closeDetail() {
  */
 export async function getPostById(id: number): Promise<PostDetail | null> {
   try {
-    // 直接使用新添加的 /posts/:id 接口
     const res = await request.get(`/detail/${id}`)
     return res.data
   } catch (error) {
@@ -50,4 +50,34 @@ export async function sendComment(id: number, content: string, type: string) {
     console.error('Error sending comment:', error)
   }
   return res
+}
+
+/**
+ * 点赞帖子
+ * @param id 帖子ID
+ * @returns Promise 返回点赞结果
+ */
+export async function likePost(id: number) {
+  try {
+    const res = await request.post('/detail/like', { id })
+    return res.data
+  } catch (error) {
+    console.error('点赞失败:', error)
+    return null
+  }
+}
+
+/**
+ * 收藏帖子
+ * @param id 帖子ID
+ * @returns Promise 返回收藏结果
+ */
+export async function favoritePost(id: number) {
+  try {
+    const res = await request.post('/detail/fav', { id })
+    return res.data
+  } catch (error) {
+    console.error('收藏失败:', error)
+    return null
+  }
 }

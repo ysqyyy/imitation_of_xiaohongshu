@@ -1,6 +1,6 @@
 import request from '@/utils/request'
 import type { UserInfo } from '@/types/user'
-// 获取用户信息
+// 获取用户信息ok
 export async function getUserInfo() {
   try {
     const res = await request.get('/user/getuserinfo')
@@ -12,8 +12,8 @@ export async function getUserInfo() {
   }
 }
 
-// 获取其他用户的信息
-export async function getOtherUserInfo(userId: string) {
+// 获取其他用户的信息ok
+export async function getOtherUserInfo(userId: number) {
   try {
     const res = await request.get(`/user/${userId}`)
     const user: UserInfo = res.data
@@ -24,7 +24,7 @@ export async function getOtherUserInfo(userId: string) {
   }
 }
 
-// 关注用户
+// 关注用户ok
 export async function followUser(userId: number) {
   try {
     const res = await request.post('/user/follow', { userId })
@@ -35,8 +35,8 @@ export async function followUser(userId: number) {
   }
 }
 
-// 取消关注用户
-export async function unfollowUser(userId: string) {
+// 取消关注用户ok
+export async function unfollowUser(userId: number) {
   try {
     const res = await request.post('/user/unfollow', { userId })
     return res

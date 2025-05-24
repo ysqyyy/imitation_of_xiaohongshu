@@ -1,7 +1,5 @@
 import type { MockMethod } from 'vite-plugin-mock'
-import type { PostDetail, Comment, Author } from '../src/types/user'
-
-// 模拟帖子详情数据
+import type { PostDetail, Comment } from '../src/types/user'
 const postDetailsData: Record<number, PostDetail> = {
   1: {
     id: 1,
@@ -167,7 +165,6 @@ const postDetailsData: Record<number, PostDetail> = {
       },
     ],
   },
-  // 更多帖子详情...可以继续添加
   4: {
     id: 4,
     imgs: [
@@ -237,9 +234,9 @@ export default [
   {
     url: '/api/detail/:id',
     method: 'get',
-    response: ({ params }: { params: { id: string } }) => {
-      const id = Number(params.id)
-      const postDetail = postDetailsData[id]
+    response: (config: any) => {
+      const id = config.url.split('/').pop()
+      const postDetail = postDetailsData[Number(id)]
 
       if (postDetail) {
         return {
@@ -351,6 +348,256 @@ export default [
           code: 404,
           data: null,
           message: '帖子不存在',
+        }
+      }
+    },
+  },
+
+  // 添加对帖子的评论接口
+  {
+    url: '/api/posts/:id/comments',
+    method: 'post',
+    response: ({ body, url }: { body: { content: string }; url: string }) => {
+      // 从URL中提取帖子ID
+      const idMatch = url.match(/\/api\/posts\/(\d+)\/comments/)
+      const postId = idMatch ? Number(idMatch[1]) : 0
+      const { content } = body
+
+      const post = postDetailsData[postId]
+
+      if (post) {
+        const newComment: Comment = {
+          id: Date.now(), // 使用时间戳作为临时ID
+          content,
+          author: {
+            id: 101, // 假设当前用户ID为101
+            name: '当前用户',
+            img: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=500&auto=format&fit=crop&q=60',
+            isAuthor: false,
+            isFollowed: false,
+          },
+          like: 0,
+          time: new Date().toLocaleString(),
+          isLike: false,
+        }
+
+        if (!post.comments) {
+          post.comments = []
+        }
+
+        post.comments.push(newComment)
+
+        return {
+          code: 200,
+          data: newComment,
+          message: '评论成功',
+        }
+      } else {
+        return {
+          code: 404,
+          data: null,
+          message: '帖子不存在',
+        }
+      }
+    },
+  },
+
+  // 添加对评论的回复接口
+  {
+    url: '/api/comments/:id/comments',
+    method: 'post',
+    response: ({ body, url }: { body: { content: string }; url: string }) => {
+      // 从URL中提取评论ID
+      const idMatch = url.match(/\/api\/comments\/(\d+)\/comments/)
+      const commentId = idMatch ? Number(idMatch[1]) : 0
+      const { content } = body
+
+      // 在所有帖子中查找目标评论
+      let targetComment: Comment | null = null
+      let parentPost: PostDetail | null = null
+
+      // 遍历所有帖子查找评论
+      for (const postId in postDetailsData) {
+        const post = postDetailsData[Number(postId)]
+        if (!post.comments) continue
+
+        // 递归查找评论的函数
+        const findComment = (comments: Comment[]): boolean => {
+          for (const comment of comments) {
+            if (comment.id === commentId) {
+              targetComment = comment
+              parentPost = post
+              return true
+            }
+
+            // 递归检查回复
+            if (comment.reply && findComment(comment.reply)) {
+              return true
+            }
+          }
+          return false
+        }
+
+        if (findComment(post.comments)) {
+          break
+        }
+      }
+
+      if (targetComment && parentPost) {
+        const newReply: Comment = {
+          id: Date.now(), // 使用时间戳作为临时ID
+          content,
+          author: {
+            id: 101, // 假设当前用户ID为101
+            name: '当前用户',
+            img: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=500&auto=format&fit=crop&q=60',
+            isAuthor: false,
+            isFollowed: false,
+          },
+          like: 0,
+          time: new Date().toLocaleString(),
+          isLike: false,
+        }
+
+        if (!targetComment.reply) {
+          targetComment.reply = []
+        }
+
+        targetComment.reply.push(newReply)
+
+        return {
+          code: 200,
+          data: newReply,
+          message: '回复成功',
+        }
+      } else {
+        return {
+          code: 404,
+          data: null,
+          message: '评论不存在',
+        }
+      }
+    },
+  },
+  {
+    url: '/api/posts/:id/comments',
+    method: 'post',
+    response: ({ body, url }: { body: { content: string }; url: string }) => {
+      // 从URL中提取帖子ID
+      const idMatch = url.match(/\/api\/posts\/(\d+)\/comments/)
+      const postId = idMatch ? Number(idMatch[1]) : 0
+      const { content } = body
+
+      const post = postDetailsData[postId]
+
+      if (post) {
+        const newComment: Comment = {
+          id: Date.now(), // 使用时间戳作为临时ID
+          content,
+          author: {
+            id: 101, // 假设当前用户ID为101
+            name: '当前用户',
+            img: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=500&auto=format&fit=crop&q=60',
+            isAuthor: false,
+            isFollowed: false,
+          },
+          like: 0,
+          time: new Date().toLocaleString(),
+          isLike: false,
+        }
+
+        if (!post.comments) {
+          post.comments = []
+        }
+
+        post.comments.push(newComment)
+
+        return {
+          code: 200,
+          data: newComment,
+          message: '评论成功',
+        }
+      } else {
+        return {
+          code: 404,
+          data: null,
+          message: '帖子不存在',
+        }
+      }
+    },
+  },
+  {
+    url: '/api/comments/:id/comments',
+    method: 'post',
+    response: ({ body, url }: { body: { content: string }; url: string }) => {
+      // 从URL中提取评论ID
+      const idMatch = url.match(/\/api\/comments\/(\d+)\/comments/)
+      const commentId = idMatch ? Number(idMatch[1]) : 0
+      const { content } = body
+
+      // 在所有帖子中查找目标评论
+      let targetComment: Comment | null = null
+      let parentPost: PostDetail | null = null
+
+      // 遍历所有帖子查找评论
+      for (const postId in postDetailsData) {
+        const post = postDetailsData[Number(postId)]
+        if (!post.comments) continue
+
+        // 递归查找评论的函数
+        const findComment = (comments: Comment[]): boolean => {
+          for (const comment of comments) {
+            if (comment.id === commentId) {
+              targetComment = comment
+              parentPost = post
+              return true
+            }
+
+            // 递归检查回复
+            if (comment.reply && findComment(comment.reply)) {
+              return true
+            }
+          }
+          return false
+        }
+
+        if (findComment(post.comments)) {
+          break
+        }
+      }
+
+      if (targetComment && parentPost) {
+        const newReply: Comment = {
+          id: Date.now(), // 使用时间戳作为临时ID
+          content,
+          author: {
+            id: 101, // 假设当前用户ID为101
+            name: '当前用户',
+            img: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=500&auto=format&fit=crop&q=60',
+            isAuthor: false,
+            isFollowed: false,
+          },
+          like: 0,
+          time: new Date().toLocaleString(),
+          isLike: false,
+        }
+
+        if (!targetComment.reply) {
+          targetComment.reply = []
+        }
+
+        targetComment.reply.push(newReply)
+
+        return {
+          code: 200,
+          data: newReply,
+          message: '回复成功',
+        }
+      } else {
+        return {
+          code: 404,
+          data: null,
+          message: '评论不存在',
         }
       }
     },

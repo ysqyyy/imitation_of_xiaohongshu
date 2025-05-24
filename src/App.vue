@@ -5,8 +5,6 @@
         <RouterLink to="/" class="nav-link" active-class="nav-active">推荐</RouterLink>
         <RouterLink to="/search" class="nav-link" active-class="nav-active">查找</RouterLink>
         <RouterLink to="/myhome" class="nav-link" active-class="nav-active">我的主页</RouterLink>
-        <RouterLink to="/user/87654321" class="nav-link" active-class="nav-active"
-          >达人主页</RouterLink
         >
       </nav>
     </aside>
@@ -61,7 +59,7 @@ aside {
   flex-direction: column;
   align-items: center;
   flex: 1;
-  height: 100vh;
+  height: 100%;
   padding: 2rem 0;
   background: #fff;
   border-right: 1px solid #f2f2f2;
@@ -76,7 +74,7 @@ aside {
 }
 .nav-link {
   display: block;
-  width: 120px;
+  width: 80%;
   text-align: center;
   padding: 0.9rem 0;
   font-size: 1.25rem;
@@ -100,6 +98,7 @@ aside {
 main {
   flex: 6;
   display: flex;
+  height: 100%;
   flex-direction: column;
   align-items: center;
   padding: 2rem;
@@ -109,7 +108,7 @@ main {
 header {
   width: 70%;
   line-height: 1.5;
-  max-height: 10vh;
+  max-height: 10%;
 }
 .search-bar {
   width: 70%;
@@ -144,6 +143,9 @@ header {
 .main-content {
   flex: 1;
   width: 100%;
-  padding-right: 4rem;
+  max-width: 100%; /* 确保内容不会超出容器 */
+  padding-right: 3rem; /* 减小右侧内边距 */
+  box-sizing: border-box; /* 确保内边距不会增加元素的总宽度 */
+  overflow-x: hidden; /* 防止水平溢出 */
 }
 </style>
