@@ -2,7 +2,7 @@
   <div class="layout">
     <aside>
       <nav class="custom-nav">
-        <RouterLink to="/" class="nav-link" active-class="nav-active">推荐</RouterLink>
+        <RouterLink to="/recomm" class="nav-link" active-class="nav-active">推荐</RouterLink>
         <RouterLink to="/search" class="nav-link" active-class="nav-active">查找</RouterLink>
         <RouterLink to="/myhome" class="nav-link" active-class="nav-active">我的主页</RouterLink>
         <button class="login-btn" @click="showLoginModal = true">登录</button>

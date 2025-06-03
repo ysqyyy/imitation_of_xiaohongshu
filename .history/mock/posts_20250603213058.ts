@@ -85,7 +85,7 @@ const posts: PostCard[] = [
     like: 2333,
     tabs: ['健身', '燃脂', '居家运动'],
     type: 'video',
-    video: 'https://www.w3schools.com/html/mov_bbb.mp4',
+    video: 'https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4',
     duration: 600,
   },
   // 摄影图片

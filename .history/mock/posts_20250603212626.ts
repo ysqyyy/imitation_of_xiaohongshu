@@ -85,7 +85,7 @@ const posts: PostCard[] = [
     like: 2333,
     tabs: ['健身', '燃脂', '居家运动'],
     type: 'video',
-    video: 'https://www.w3schools.com/html/mov_bbb.mp4',
+    video: 'https://www.bilibili.com/video/BV1r8411c7zC/',
     duration: 600,
   },
   // 摄影图片

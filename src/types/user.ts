@@ -7,6 +7,9 @@ export type PostCard = {
   like: number
   private?: boolean
   tabs?: string[]
+  video?: string // 视频URL
+  type?: 'image' | 'video' // 内容类型
+  duration?: number // 视频时长（秒）
 }
 // 用户信息类型(他人+我的主页)
 export interface UserInfo {
