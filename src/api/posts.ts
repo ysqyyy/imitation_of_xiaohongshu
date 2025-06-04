@@ -1,4 +1,5 @@
-import type { PostCard } from '@/types/index'
+import request from '@/utils/request'
+import type { PostCard } from '@/types/user'
 
 // 获取推荐帖子响应类型
 export interface RecommendPostsResponse {
