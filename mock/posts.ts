@@ -1,5 +1,5 @@
 import type { MockMethod } from 'vite-plugin-mock'
-import type { PostCard } from '../src/types/user'
+import type { PostCard } from '../src/types'
 
 const posts: PostCard[] = [
   {

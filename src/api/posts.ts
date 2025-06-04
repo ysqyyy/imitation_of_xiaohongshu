@@ -1,5 +1,5 @@
 import request from '@/utils/request'
-import type { PostCard } from '@/types/user'
+import type { PostCard } from '@/types'
 
 //关键词搜索帖子
 /**

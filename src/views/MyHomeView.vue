@@ -29,7 +29,7 @@
             {{ tab.label }}
           </span>
         </div>
-        <PostList :posts="posts" :emptyText="getEmptyText()" @like="handleLike" />
+        <PostList :posts="posts" :emptyText="getEmptyText()" />
       </section>
     </main>
   </div>
@@ -37,10 +37,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import type { UserInfo, PostCard } from '../types/user'
+import type { UserInfo, PostCard } from '../types'
 import { getUserInfo } from '../api/user'
 import PostList from '../components/PostList.vue'
-import { likePost } from '../api/detail'
 
 const defaultAvatar = '/src/assets/logo.svg'
 
@@ -95,29 +94,6 @@ function getEmptyText() {
   if (activeTab.value === 'fav') return '收藏'
   if (activeTab.value === 'like') return '点赞'
   return '内容'
-}
-
-// 处理点赞事件
-async function handleLike(post: PostCard) {
-  try {
-    const result = await likePost(post.id)
-    if (result) {
-      // 更新点赞数
-      post.like += 1
-      
-      // 如果当前是在"点赞"标签页，需要更新用户的点赞列表
-      if (userCache && !userCache.likedPosts.some(p => p.id === post.id)) {
-        userCache.likedPosts.push(post)
-        
-        // 如果在"点赞"标签页，刷新显示
-        if (activeTab.value === 'like') {
-          posts.value = getPostsByTab(userCache, 'like')
-        }
-      }
-    }
-  } catch (error) {
-    console.error('点赞操作失败:', error)
-  }
 }
 </script>
 

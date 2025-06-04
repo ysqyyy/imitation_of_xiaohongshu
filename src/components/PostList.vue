@@ -29,7 +29,7 @@
 
 <script setup lang="ts">
 import { defineProps } from 'vue'
-import type { PostCard } from '../types/user'
+import type { PostCard } from '../types'
 import { goDetail, likePost } from '../api/detail'
 
 // 定义组件属性
@@ -47,6 +47,11 @@ function handleGoDetail(id: number) {
 function handleLikePost(post: PostCard) {
   likePost(post.id)
 }
+</script>
+
+<script lang="ts">
+// 添加默认导出以便支持 import PostList from '../components/PostList.vue'
+export default {}
 </script>
 
 <style scoped>

@@ -1,5 +1,5 @@
 import type { MockMethod } from 'vite-plugin-mock'
-import type { PostDetail, Comment } from '../src/types/user'
+import type { PostDetail, Comment } from '../src/types'
 const postDetailsData: Record<number, PostDetail> = {
   1: {
     id: 1,
@@ -85,7 +85,7 @@ const postDetailsData: Record<number, PostDetail> = {
       id: 201,
       name: '小红',
       img: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&auto=format&fit=crop&q=60',
-      isAuthor: true,
+      isAuthor: false,
       isFollowed: true,
     },
     like: 66,
@@ -459,11 +459,11 @@ export default [
           isLike: false,
         }
 
-        if (!targetComment.reply) {
-          targetComment.reply = []
+        if (!(targetComment as Comment).reply) {
+          ;(targetComment as Comment).reply = []
         }
 
-        targetComment.reply.push(newReply)
+        ;(targetComment as Comment).reply!.push(newReply)
 
         return {
           code: 200,
@@ -582,11 +582,11 @@ export default [
           isLike: false,
         }
 
-        if (!targetComment.reply) {
-          targetComment.reply = []
+        // 明确断言 targetComment 为 Comment 类型
+        if (!('reply' in targetComment)) {
+          ;(targetComment as Comment).reply = []
         }
-
-        targetComment.reply.push(newReply)
+        ;(targetComment as Comment).reply!.push(newReply)
 
         return {
           code: 200,
@@ -598,6 +598,76 @@ export default [
           code: 404,
           data: null,
           message: '评论不存在',
+        }
+      }
+    },
+  },
+  {
+    // 编辑帖子接口
+    url: '/api/post/edit/:id',
+    method: 'put',
+    response: ({ body, url }: { body: any; url: string }) => {
+      // 从URL中提取帖子ID
+      const idMatch = url.match(/\/api\/post\/edit\/(\d+)/)
+      const postId = idMatch ? Number(idMatch[1]) : 0
+
+      if (postDetailsData[postId]) {
+        // 更新帖子内容
+        postDetailsData[postId] = {
+          ...postDetailsData[postId],
+          title: body.title,
+          content: body.content,
+          tabs: body.tags,
+          imgs: body.imgs,
+          private: body.private,
+          time: new Date().toLocaleString() + ' (已编辑)',
+        }
+
+        return {
+          code: 200,
+          data: {
+            success: true,
+            message: '帖子编辑成功',
+          },
+        }
+      } else {
+        return {
+          code: 404,
+          data: {
+            success: false,
+            message: '帖子不存在',
+          },
+        }
+      }
+    },
+  },
+  {
+    // 删除帖子接口
+    url: '/api/post/delete/:id',
+    method: 'delete',
+    response: ({ url }: { url: string }) => {
+      // 从URL中提取帖子ID
+      const idMatch = url.match(/\/api\/post\/delete\/(\d+)/)
+      const postId = idMatch ? Number(idMatch[1]) : 0
+
+      if (postDetailsData[postId]) {
+        // 在实际应用中，这里可能是标记删除而不是直接删除
+        delete postDetailsData[postId]
+
+        return {
+          code: 200,
+          data: {
+            success: true,
+            message: '帖子删除成功',
+          },
+        }
+      } else {
+        return {
+          code: 404,
+          data: {
+            success: false,
+            message: '帖子不存在',
+          },
         }
       }
     },

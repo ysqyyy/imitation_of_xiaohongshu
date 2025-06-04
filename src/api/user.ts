@@ -1,6 +1,6 @@
 import request from '@/utils/request'
-import type { UserInfo } from '@/types/user'
-// 获取用户信息ok
+import type { UserInfo } from '@/types'
+// 获取用户信息
 export async function getUserInfo() {
   try {
     const res = await request.get('/user/getuserinfo')
@@ -12,7 +12,7 @@ export async function getUserInfo() {
   }
 }
 
-// 获取其他用户的信息ok
+// 获取其他用户的信息
 /**
  * @param userId 用户ID
  * @return UserInfo 用户信息
@@ -27,7 +27,7 @@ export async function getOtherUserInfo(userId: number) {
     throw error
   }
 }
-// 关注用户ok
+// 关注用户
 /**
  * @param userId 用户ID
  * @return 成功或失败信息
@@ -41,7 +41,7 @@ export async function followUser(userId: number) {
     throw error
   }
 }
-// 取消关注用户ok
+// 取消关注用户
 /**
  * @param userId 用户ID
  * @return 成功或失败信息

@@ -22,7 +22,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchPosts } from '../api/posts'
-import type { PostCard } from '../types/user'
+import type { PostCard } from '../types'
 import PostList from '../components/PostList.vue'
 
 const categories = ['全部', '美食', '旅行', '穿搭', '数码', '学习', '娱乐', '生活']

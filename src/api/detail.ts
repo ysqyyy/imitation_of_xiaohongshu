@@ -1,6 +1,21 @@
 import request from '@/utils/request'
 import router from '@/router'
-import type { PostDetail } from '@/types/user'
+import type { PostDetail } from '@/types'
+
+// 发布帖子
+export async function publishPost(postData: {
+  title: string
+  content: string
+  tags: string[]
+  imgs: string[]
+  private: boolean
+}) {
+  return request({
+    url: '/api/post/publish',
+    method: 'post',
+    data: postData,
+  })
+}
 
 //点开帖子
 export function goDetail(id: number) {
@@ -82,6 +97,53 @@ export async function favoritePost(id: number) {
     return res.data
   } catch (error) {
     console.error('收藏失败:', error)
+    return null
+  }
+}
+
+/**
+ * 编辑帖子
+ * @param id 帖子ID
+ * @param postData 帖子数据
+ * @return 成功或失败信息
+ */
+export async function editPost(
+  id: number,
+  postData: {
+    title: string
+    content: string
+    tags: string[]
+    imgs: string[]
+    private: boolean
+  },
+) {
+  try {
+    const res = await request({
+      url: `/api/post/edit/${id}`,
+      method: 'put',
+      data: postData,
+    })
+    return res.data
+  } catch (error) {
+    console.error('编辑帖子失败:', error)
+    return null
+  }
+}
+
+/**
+ * 删除帖子
+ * @param id 帖子ID
+ * @return 成功或失败信息
+ */
+export async function deletePost(id: number) {
+  try {
+    const res = await request({
+      url: `/api/post/delete/${id}`,
+      method: 'delete',
+    })
+    return res.data
+  } catch (error) {
+    console.error('删除帖子失败:', error)
     return null
   }
 }

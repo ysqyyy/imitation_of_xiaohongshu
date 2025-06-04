@@ -3,12 +3,11 @@
     <div class="detail-container">
       <!-- 左侧图片集 -->
       <div class="image">
-        <!-- 主图 -->
-        <img :src="post.imgs[currentImgIndex]" class="main-image" />
+        <img v-if="post" :src="post.imgs[currentImgIndex]" class="main-image" />
         <!-- 缩略图集 (显示所有图片) -->
         <div class="thumbnails">
           <img
-            v-for="(img, id) in post.imgs"
+            v-for="(img, id) in post?.imgs || []"
             :key="id"
             :src="img"
             class="thumbnail"
@@ -24,20 +23,32 @@
         <div class="author-info">
           <div
             class="avatar"
-            :style="{ backgroundImage: `url(${post.author.img})` }"
-            @click="otherUser(post.author.id)"
+            :style="{ backgroundImage: `url(${post?.author.img})` }"
+            @click="otherUser(post?.author.id ?? 0)"
           ></div>
-          <div class="author-name">{{ post.author.name || '用户' }}</div>
-          <div class="follow-btn" @click="followUser(post.author.id)">关注</div>
+          <div class="author-name">{{ post?.author.name || '用户' }}</div>
+          <div
+            v-if="!post?.author.isAuthor"
+            class="follow-btn"
+            @click="followUser(post?.author.id ?? 0)"
+          >
+            关注
+          </div>
         </div>
 
         <!-- 正文内容 -->
         <div class="post-content">
-          <h2 class="post-title">{{ post.title }}</h2>
-          <p class="post-text">{{ post.content }}</p>
+          <h2 class="post-title">{{ post?.title }}</h2>
+          <p class="post-text">{{ post?.content }}</p>
           <div class="post-tags">
-            <span v-for="(tab, index) in post.tabs" :key="index" class="tag"># {{ tab }}</span>
-            <span v-if="!post.tabs || post.tabs.length === 0" class="tag"># 生活</span>
+            <span v-for="(tab, index) in post?.tabs" :key="index" class="tag"># {{ tab }}</span>
+            <span v-if="!post?.tabs || post?.tabs.length === 0" class="tag"># 生活</span>
+
+            <!-- 作者编辑删除按钮 -->
+            <div v-if="post?.author.isAuthor" class="author-actions">
+              <div class="edit-btn" @click="editPost">编辑</div>
+              <div class="delete-btn" @click="deletePostConfirm">删除</div>
+            </div>
           </div>
         </div>
 
@@ -47,7 +58,7 @@
 
           <!-- 评论列表 -->
           <div class="comment-list">
-            <div v-for="comment in post.comments" :key="comment.id" class="comment-item">
+            <div v-for="comment in post?.comments" :key="comment.id" class="comment-item">
               <div
                 class="comment-avatar"
                 :style="{ backgroundImage: `url(${comment.author.img})` }"
@@ -60,12 +71,50 @@
                   <span class="time">{{ comment.time }}</span>
                   <span class="like">♥ {{ comment.like }}</span>
                   <span class="reply" @click="replyComment(comment)">回复</span>
+                  <span
+                    v-if="comment.reply && comment.reply.length > 0"
+                    class="view-replies"
+                    @click="toggleReplies(comment.id)"
+                  >
+                    {{
+                      expandedComments.includes(comment.id)
+                        ? '收起回复'
+                        : `查看${comment.reply.length}条回复`
+                    }}
+                  </span>
+                </div>
+
+                <!-- 二级评论区域 -->
+                <div
+                  v-if="
+                    expandedComments.includes(comment.id) &&
+                    comment.reply &&
+                    comment.reply.length > 0
+                  "
+                  class="replies-container"
+                >
+                  <div v-for="reply in comment.reply" :key="reply.id" class="reply-item">
+                    <div
+                      class="reply-avatar"
+                      :style="{ backgroundImage: `url(${reply.author.img})` }"
+                      @click="otherUser(reply.author.id)"
+                    ></div>
+                    <div class="reply-content">
+                      <div class="reply-user">{{ reply.author.name }}</div>
+                      <div class="reply-text">{{ reply.content }}</div>
+                      <div class="reply-actions">
+                        <span class="time">{{ reply.time }}</span>
+                        <span class="like">♥ {{ reply.like }}</span>
+                        <span class="reply" @click="replyComment(reply)">回复</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div v-if="post.comments?.length === 0" class="no-comments">暂无评论，快来抢沙发吧~</div>
+          <div v-if="post?.comments?.length === 0" class="no-comments">暂无评论，快来抢沙发吧~</div>
         </div>
 
         <footer>
@@ -82,11 +131,11 @@
           <!-- 互动按钮区 -->
           <div class="action-buttons">
             <div class="action-btn">
-              <i class="icon like-icon" @click="sendLike(post.id)"></i>
-              <span>{{ post.like }}</span>
+              <i class="icon like-icon" @click="sendLike(post?.id)"></i>
+              <span>{{ post?.like }}</span>
             </div>
             <div class="action-btn">
-              <i class="icon fav-icon" @click="sendFav(post.id)"></i>
+              <i class="icon fav-icon" @click="sendFav(post?.id)"></i>
               <span>收藏</span>
             </div>
             <div class="action-btn">
@@ -100,41 +149,91 @@
       <!-- 关闭按钮 -->
       <button class="close-btn" @click="close">×</button>
     </div>
+    <!-- 编辑帖子弹窗 -->
+    <PublishView.default v-if="showPublish" :edit-mode="true" @close="closePublishModal" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
-import type { PostDetail, Comment } from '../types/user'
-import { closeDetail, getPostById, sendComment, likePost, favoritePost } from '../api/detail'
+import type { PostDetail, Comment } from '../types'
+import {
+  closeDetail,
+  getPostById,
+  sendComment,
+  likePost,
+  favoritePost,
+  deletePost,
+} from '../api/detail'
 import { followUser } from '../api/user'
 import { useRouter } from 'vue-router'
+import * as PublishView from './PublishView.vue'
 const router = useRouter()
 const props = defineProps<{ id: string }>()
 
-const post = ref<PostDetail>({
-  id: 0,
-  imgs: [],
-  title: '',
-  content: '',
-  author: {
-    id: 0,
-    name: '',
-    img: '',
-  },
-  tabs: [],
-  like: 0,
-  comments: [],
-  fav: 0,
-  time: '',
-  private: false,
-  isLike: false,
-  isFav: false,
-})
+const post = ref<PostDetail | null>(null)
 const commentText = ref('')
 const commentCount = ref(0)
 const replyTarget = ref<Comment | null>(null)
 const currentImgIndex = ref(0) // 当前显示的图片索引
+const expandedComments = ref<number[]>([]) // 存储已展开评论的ID
+const showPublish = ref(false) // 控制编辑弹窗的显示
+
+// 编辑帖子
+function editPost() {
+  if (!post.value) return
+
+  // 创建编辑所需的数据
+  const editData = {
+    id: post.value.id,
+    title: post.value.title,
+    content: post.value.content,
+    tags: post.value.tabs,
+    imgs: post.value.imgs,
+    private: post.value.private || false,
+  }
+
+  // 将数据存储到localStorage以便PublishView组件使用
+  localStorage.setItem('editPostData', JSON.stringify(editData))
+
+  // 打开编辑弹窗
+  showPublish.value = true
+}
+
+// 删除帖子
+async function deletePostConfirm() {
+  if (!post.value) return
+
+  if (confirm('确定要删除这篇帖子吗？删除后将无法恢复。')) {
+    try {
+      const result = await deletePost(post.value.id)
+      if (result && result.success) {
+        alert('删除成功')
+        close() // 关闭详情页
+        // 可能还需要刷新列表页
+        router.go(0) // 刷新页面
+      } else {
+        alert('删除失败：' + (result?.message || '未知错误'))
+      }
+    } catch (error) {
+      console.error('删除帖子失败:', error)
+      alert('删除失败，请稍后重试')
+    }
+  }
+}
+
+// 关闭编辑弹窗
+function closePublishModal() {
+  showPublish.value = false
+  // 可以选择在这里刷新帖子数据
+  if (props.id) {
+    getPostById(Number(props.id)).then((result) => {
+      if (result) {
+        post.value = result
+      }
+    })
+  }
+}
 
 onMounted(async () => {
   if (props.id) {
@@ -161,40 +260,46 @@ function close() {
 }
 // 计算评论数量
 watch(
-  () => post.value.comments ?? [],
+  () => post.value?.comments ?? [],
   (newComments) => {
     commentCount.value = newComments.length
   },
   { immediate: true },
 )
 // 点赞帖子
-async function sendLike(id: number) {
+async function sendLike(id?: number) {
+  if (!id || !post.value) return
   try {
     const result = await likePost(id)
-    if (result) {
+    if (result && post.value) {
       post.value.isLike = result.isLike
       post.value.like = result.like
     }
   } catch (error) {
     console.error('点赞操作失败:', error)
     // 失败时回滚本地状态
-    post.value.isLike = !post.value.isLike
-    post.value.like += post.value.isLike ? 1 : -1
+    if (post.value) {
+      post.value.isLike = !post.value.isLike
+      post.value.like += post.value.isLike ? 1 : -1
+    }
   }
 }
 // 收藏帖子
-async function sendFav(id: number) {
+async function sendFav(id?: number) {
+  if (!id || !post.value) return
   try {
     const result = await favoritePost(id)
-    if (result) {
+    if (result && post.value) {
       post.value.isFav = result.isFav
       post.value.fav = result.fav
     }
   } catch (error) {
     console.error('收藏操作失败:', error)
     // 失败时回滚本地状态
-    post.value.isFav = !post.value.isFav
-    post.value.fav += post.value.isFav ? 1 : -1
+    if (post.value) {
+      post.value.isFav = !post.value.isFav
+      post.value.fav += post.value.isFav ? 1 : -1
+    }
   }
 }
 //回复帖子
@@ -219,11 +324,24 @@ function submitComment() {
   if (replyTarget.value) {
     sendComment(replyTarget.value.id, commentText.value, 'comment')
     replyTarget.value = null
-  } else sendComment(post.value.id, commentText.value, 'post')
+  } else if (post.value) {
+    sendComment(post.value.id, commentText.value, 'post')
+  }
 }
 //点击他人头像
 function otherUser(id: number) {
   router.push({ path: `/user/${id}` })
+}
+
+// 切换二级评论的展开/收起状态
+function toggleReplies(commentId: number) {
+  if (expandedComments.value.includes(commentId)) {
+    // 如果已展开，则收起
+    expandedComments.value = expandedComments.value.filter((id) => id !== commentId)
+  } else {
+    // 如果未展开，则展开
+    expandedComments.value.push(commentId)
+  }
 }
 </script>
 
@@ -342,6 +460,39 @@ function otherUser(id: number) {
   cursor: pointer;
 }
 
+.author-actions {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.edit-btn,
+.delete-btn {
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.edit-btn {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.edit-btn:hover {
+  background: #e0e0e0;
+}
+
+.delete-btn {
+  background: #ffeded;
+  color: #ff2d55;
+}
+
+.delete-btn:hover {
+  background: #ffe0e0;
+}
+
 /* 帖子内容 */
 .post-content {
   margin-bottom: 24px;
@@ -362,8 +513,10 @@ function otherUser(id: number) {
 
 .post-tags {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 16px;
+  position: relative;
 }
 
 .tag {
@@ -372,6 +525,7 @@ function otherUser(id: number) {
   padding: 4px 12px;
   border-radius: 16px;
   font-size: 14px;
+  margin-bottom: 4px;
 }
 
 /* 评论区 */
@@ -441,6 +595,62 @@ function otherUser(id: number) {
 .reply:hover,
 .like:hover {
   color: #ff2d55;
+}
+
+.view-replies {
+  cursor: pointer;
+  color: #007bff;
+}
+
+.view-replies:hover {
+  text-decoration: underline;
+}
+
+/* 二级评论样式 */
+.replies-container {
+  margin-top: 10px;
+  padding-left: 15px;
+  border-left: 2px solid #f0f0f0;
+}
+
+.reply-item {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.reply-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.reply-content {
+  flex: 1;
+}
+
+.reply-user {
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 3px;
+}
+
+.reply-text {
+  font-size: 13px;
+  line-height: 1.4;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.reply-actions {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: #999;
 }
 
 .no-comments {
@@ -541,5 +751,20 @@ footer {
 .close-btn:hover {
   background: #fff;
   color: #ff2d55;
+}
+
+/* 响应式样式 */
+@media screen and (max-width: 768px) {
+  .post-tags {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .author-actions {
+    margin-left: 0;
+    margin-top: 8px;
+    width: 100%;
+    justify-content: flex-end;
+  }
 }
 </style>

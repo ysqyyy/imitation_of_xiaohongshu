@@ -5,7 +5,11 @@
         <RouterLink to="/" class="nav-link" active-class="nav-active">推荐</RouterLink>
         <RouterLink to="/search" class="nav-link" active-class="nav-active">查找</RouterLink>
         <RouterLink to="/myhome" class="nav-link" active-class="nav-active">我的主页</RouterLink>
-        >
+        <div class="nav-bottom">
+          <div class="publish-btn" @click="openPublishModal">
+            <span class="plus-icon">+</span><span>发布</span>
+          </div>
+        </div>
       </nav>
     </aside>
     <main>
@@ -25,6 +29,7 @@
         <RouterView />
       </div>
       <DetailView.default v-if="showDetail" :id="detailId" />
+      <PublishView.default v-if="showPublish" @close="closePublishModal" />
     </main>
   </div>
 </template>
@@ -33,6 +38,7 @@
 import { ref, computed } from 'vue'
 import { RouterLink, RouterView, useRouter, useRoute } from 'vue-router'
 import * as DetailView from './views/DetailView.vue'
+import * as PublishView from './views/PublishView.vue'
 const router = useRouter()
 const route = useRoute()
 
@@ -44,7 +50,22 @@ function onSearch() {
 // 判断当前是否有 detail 查询参数来显示弹窗
 const showDetail = computed(() => !!route.query.detail)
 // 获取详情 ID
-const detailId = computed(() => route.query.detail)
+const detailId = computed(() => {
+  const val = route.query.detail
+  if (Array.isArray(val)) {
+    return val[0] ?? ''
+  }
+  return val ?? ''
+})
+
+// 控制发布弹窗的显示
+const showPublish = ref(false)
+function openPublishModal() {
+  showPublish.value = true
+}
+function closePublishModal() {
+  showPublish.value = false
+}
 </script>
 
 <style scoped>
@@ -60,9 +81,10 @@ aside {
   align-items: center;
   flex: 1;
   height: 100%;
-  padding: 2rem 0;
+  padding: 1rem 0;
   background: #fff;
   border-right: 1px solid #f2f2f2;
+  position: relative;
 }
 .custom-nav {
   display: flex;
@@ -71,6 +93,16 @@ aside {
   gap: 2.5rem;
   margin-top: 8rem;
   width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.nav-bottom {
+  position: absolute;
+  bottom: 30px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 .nav-link {
   display: block;
@@ -85,6 +117,7 @@ aside {
   font-weight: 500;
   letter-spacing: 1px;
   text-decoration: none;
+  margin-bottom: 0.5rem;
 }
 .nav-link:hover {
   background: #ffe6ec;
@@ -94,6 +127,36 @@ aside {
   background: #ff2d55;
   color: #fff !important;
   box-shadow: 0 2px 8px 0 #ffe6ec;
+}
+.publish-btn {
+  width: 60%;
+  height: auto;
+  background: transparent;
+  color: #888;
+  padding: 0.5rem 0;
+  font-size: 1.25rem;
+  border: 3px solid #aaa;
+  border-radius: 24px;
+  display: flex;
+  font-weight: 500;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 10px 20px;
+}
+
+.publish-btn:hover {
+  background: #ff2d55;
+  color: #fff;
+  border-color: #ff2d55;
+  transform: scale(1.05);
+}
+
+.plus-icon {
+  font-size: 18px;
+  font-weight: bold;
+  margin-right: 4px;
 }
 main {
   flex: 6;
@@ -131,8 +194,8 @@ header {
   padding: 0.7rem 1.5rem;
   background: #ff2d55;
   color: #fff;
-  border: none;
   border-radius: 20px;
+  border: none;
   font-size: 1rem;
   cursor: pointer;
   transition: background 0.2s;
