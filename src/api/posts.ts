@@ -1,12 +1,3 @@
-/*
- * @Author: 吴伟 15711376175@163.com
- * @Date: 2025-05-30 15:25:08
- * @LastEditors: 吴伟 15711376175@163.com
- * @LastEditTime: 2025-06-03 15:25:09
- * @FilePath: /api_front/src/api/posts.ts
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
- */
-import request from '@/utils/request'
 import type { PostCard } from '@/types/index'
 
 // 获取推荐帖子响应类型
