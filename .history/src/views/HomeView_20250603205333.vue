@@ -1,9 +1,17 @@
+<!--
+ * @Author: 吴伟 15711376175@163.com
+ * @Date: 2025-05-30 15:25:08
+ * @LastEditors: 吴伟 15711376175@163.com
+ * @LastEditTime: 2025-06-03 15:30:02
+ * @FilePath: /api_front/src/views/HomeView.vue
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+-->
 <script lang="ts" setup>
 import { ref, computed, onMounted } from 'vue'
 import { fetchRecommendPosts } from '@/api/posts'
 import PostCard from '@/components/PostCard.vue'
 import VideoPlayer from '@/components/VideoPlayer.vue'
-import type { PostCard as PostCardType } from '@/types'
+import type { PostCard as PostCardType } from '@/types/user'
 
 const posts = ref<PostCardType[]>([])
 const loading = ref(false)
@@ -14,7 +22,7 @@ const showVideoPlayer = ref(false)
 const currentVideoIndex = ref(0)
 
 // 计算视频帖子列表（用于视频播放器）
-const videoPosts = computed(() => posts.value.filter((post) => post.type === 'video'))
+const videoPosts = computed(() => posts.value.filter(post => post.type === 'video'))
 
 // 计算总页数
 const totalPages = computed(() => Math.ceil(total.value / pageSize.value))
@@ -48,12 +56,13 @@ const loadPosts = async (page: number = 1) => {
 
     posts.value = newPosts.list
     currentPage.value = page
-
-    // 模拟总数据量（实际应该从API返回）
+    
+    // 模拟总数据量（实际项目中应该从API返回）
     // 这里假设总共有100条数据
     total.value = newPosts.total
 
     console.log('当前页:', currentPage.value, '总页数:', totalPages.value)
+    
   } catch (error) {
     console.error('加载帖子失败:', error)
   } finally {
@@ -65,10 +74,10 @@ const loadPosts = async (page: number = 1) => {
 // 处理页码变化
 const handlePageChange = (page: number) => {
   if (page < 1 || page > totalPages.value || loading.value) return
-
+  
   // 滚动到顶部
   window.scrollTo({ top: 0, behavior: 'smooth' })
-
+  
   loadPosts(page)
 }
 
@@ -76,7 +85,7 @@ const handlePageChange = (page: number) => {
 const handlePostClick = (post: PostCardType) => {
   if (post.type === 'video') {
     // 视频类型，打开视频播放器
-    const videoIndex = videoPosts.value.findIndex((p) => p.id === post.id)
+    const videoIndex = videoPosts.value.findIndex(p => p.id === post.id)
     if (videoIndex !== -1) {
       currentVideoIndex.value = videoIndex
       showVideoPlayer.value = true
@@ -137,8 +146,17 @@ onMounted(async () => {
     <!-- 瀑布流内容 -->
     <div v-else class="waterfall-container">
       <div class="waterfall-columns">
-        <div v-for="(column, index) in columns" :key="index" class="waterfall-column">
-          <PostCard v-for="post in column" :key="post.id" :post="post" @click="handlePostClick" />
+        <div
+          v-for="(column, index) in columns"
+          :key="index"
+          class="waterfall-column"
+        >
+          <PostCard
+            v-for="post in column"
+            :key="post.id"
+            :post="post"
+            @click="handlePostClick"
+          />
         </div>
       </div>
 
@@ -158,10 +176,14 @@ onMounted(async () => {
           <!-- 页码 -->
           <div class="pagination-numbers">
             <!-- 第一页 -->
-            <button v-if="currentPage > 3" @click="handlePageChange(1)" class="pagination-number">
+            <button
+              v-if="currentPage > 3"
+              @click="handlePageChange(1)"
+              class="pagination-number"
+            >
               1
             </button>
-
+            
             <!-- 省略号 -->
             <span v-if="currentPage > 4" class="pagination-ellipsis">...</span>
 
@@ -293,12 +315,8 @@ onMounted(async () => {
 }
 
 @keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .pagination-container {

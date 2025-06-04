@@ -1,5 +1,5 @@
 import type { MockMethod } from 'vite-plugin-mock'
-import type { PostCard } from '../src/types/index'
+import type { PostCard } from '../src/types/user'
 
 const posts: PostCard[] = [
   // 技术类视频
@@ -17,8 +17,7 @@ const posts: PostCard[] = [
     like: 888,
     tabs: ['前端', 'Vue3', '教程'],
     type: 'video',
-    video:
-      'https://vd4.bdstatic.com/mda-ree9un2b1mjvt33c/cae_h264/1747292379850822234/mda-ree9un2b1mjvt33c.mp4?abtest=peav_l52&appver=&auth_key=1748957207-0-0-4f5e3da367d79a0d47d05250b03f624b&bcevod_channel=searchbox_feed&cd=0&cr=0&did=cfcd208495d565ef66e7dff9f98764da&logid=3407311679&model=&osver=&pd=1&pt=4&sl=945&sle=1&split=799792&vid=14129995574504724938&vt=1',
+    video: 'https://vd4.bdstatic.com/mda-ree9un2b1mjvt33c/cae_h264/1747292379850822234/mda-ree9un2b1mjvt33c.mp4?abtest=peav_l52&appver=&auth_key=1748957207-0-0-4f5e3da367d79a0d47d05250b03f624b&bcevod_channel=searchbox_feed&cd=0&cr=0&did=cfcd208495d565ef66e7dff9f98764da&logid=3407311679&model=&osver=&pd=1&pt=4&sl=945&sle=1&split=799792&vid=14129995574504724938&vt=1',
     duration: 180,
   },
   // 美食图片
@@ -86,7 +85,7 @@ const posts: PostCard[] = [
     like: 2333,
     tabs: ['健身', '燃脂', '居家运动'],
     type: 'video',
-    video: 'https://www.w3schools.com/html/mov_bbb.mp4',
+    video: 'https://www.bilibili.com/video/BV1r8411c7zC/',
     duration: 600,
   },
   // 摄影图片
@@ -289,8 +288,7 @@ const posts: PostCard[] = [
     like: 3456,
     tabs: ['Python', '爬虫', '编程'],
     type: 'video',
-    video:
-      'https://vd4.bdstatic.com/mda-ree9un2b1mjvt33c/cae_h264/1747292379850822234/mda-ree9un2b1mjvt33c.mp4?abtest=peav_l52&appver=&auth_key=1748957207-0-0-4f5e3da367d79a0d47d05250b03f624b&bcevod_channel=searchbox_feed&cd=0&cr=0&did=cfcd208495d565ef66e7dff9f98764da&logid=3407311679&model=&osver=&pd=1&pt=4&sl=945&sle=1&split=799792&vid=14129995574504724938&vt=1',
+    video: 'https://vd4.bdstatic.com/mda-ree9un2b1mjvt33c/cae_h264/1747292379850822234/mda-ree9un2b1mjvt33c.mp4?abtest=peav_l52&appver=&auth_key=1748957207-0-0-4f5e3da367d79a0d47d05250b03f624b&bcevod_channel=searchbox_feed&cd=0&cr=0&did=cfcd208495d565ef66e7dff9f98764da&logid=3407311679&model=&osver=&pd=1&pt=4&sl=945&sle=1&split=799792&vid=14129995574504724938&vt=1',
     duration: 900,
   },
   {
@@ -340,6 +338,7 @@ const posts: PostCard[] = [
     tabs: ['摄影', '手机', '构图'],
     type: 'image',
   },
+ 
 ]
 
 export default [
@@ -375,13 +374,13 @@ export default [
   {
     url: '/api/posts/recommend',
     method: 'get',
-    response: ({ query }: { query: { page?: number; limit?: number } }) => {
+    response: ({ query }: { query: { page?: number, limit?: number } }) => {
       const page = query.page || 1
       const limit = query.limit || 10
       return {
         code: 200,
-        data: {
-          list: posts.slice((page - 1) * limit, page * limit),
+        data:{
+          list:posts.slice((page - 1) * limit, page * limit),
           total: posts.length,
         },
         message: '获取推荐帖子成功',

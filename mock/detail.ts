@@ -1,5 +1,5 @@
 import type { MockMethod } from 'vite-plugin-mock'
-import type { PostDetail, Comment } from '../src/types'
+import type { PostDetail, Comment } from '../src/types/index'
 const postDetailsData: Record<number, PostDetail> = {
   1: {
     id: 1,

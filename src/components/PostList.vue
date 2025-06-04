@@ -29,7 +29,7 @@
 
 <script setup lang="ts">
 import { defineProps } from 'vue'
-import type { PostCard } from '../types'
+import type { PostCard } from '../types/index'
 import { goDetail, likePost } from '../api/detail'
 
 // 定义组件属性

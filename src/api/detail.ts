@@ -1,6 +1,6 @@
 import request from '@/utils/request'
 import router from '@/router'
-import type { PostDetail } from '@/types'
+import type { PostDetail } from '@/types/index'
 
 // 发布帖子
 export async function publishPost(postData: {
