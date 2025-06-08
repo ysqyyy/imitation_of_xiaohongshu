@@ -41,8 +41,8 @@
 <script lang="ts" setup>
 import { ref, computed } from 'vue'
 import { RouterLink, RouterView, useRouter, useRoute } from 'vue-router'
-import DetailView from './views/DetailView.vue'
-import PublishView from './views/PublishView.vue'
+import * as DetailView from './views/DetailView.vue'
+import * as PublishView from './views/PublishView.vue'
 import LoginModal from './components/LoginModal.vue'
 
 const router = useRouter()

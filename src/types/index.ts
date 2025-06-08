@@ -5,6 +5,7 @@ export type PostCard = {
   title: string
   author: Author
   like: number
+  isLike: boolean
   private?: boolean
   tabs?: string[]
   video?: string // 视频URL

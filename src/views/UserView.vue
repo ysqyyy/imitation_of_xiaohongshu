@@ -7,13 +7,7 @@
         <div class="user-info">
           <div class="name-action">
             <h2>{{ user.name }}</h2>
-            <button
-              class="follow-button"
-              :class="{ 'is-followed': user.isFollowed }"
-              @click="toggleFollow"
-            >
-              {{ user.isFollowed ? '已关注' : '关注' }}
-            </button>
+            <FollowButton :user-id="Number(userId)" :initial-followed="user.isFollowed" />
           </div>
           <div class="user-id">小红书号：{{ user.id }}</div>
           <div class="user-desc">{{ user.desc }}</div>
@@ -47,8 +41,9 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import type { UserInfo, PostCard } from '../types'
-import { getOtherUserInfo, followUser, unfollowUser } from '../api/user'
+import { getOtherUserInfo } from '../api/user'
 import PostList from '../components/PostList.vue'
+import FollowButton from '../components/FollowButton.vue'
 
 const route = useRoute()
 const userId = computed(() => route.params.id as string)
@@ -95,26 +90,6 @@ onMounted(async () => {
 function selectTab(tabKey: string) {
   activeTab.value = tabKey
 }
-
-// 关注/取消关注用户
-async function toggleFollow() {
-  try {
-    if (user.value.isFollowed) {
-      await unfollowUser(Number(userId.value))
-      user.value.isFollowed = false
-      if (user.value.fans > 0) {
-        user.value.fans--
-      }
-    } else {
-      await followUser(Number(userId.value))
-      user.value.isFollowed = true
-      user.value.fans++
-    }
-  } catch (error) {
-    console.error('关注操作失败:', error)
-  }
-}
-
 // 获取空状态文本
 function getEmptyText() {
   if (activeTab.value === 'note') return '笔记'
@@ -165,23 +140,6 @@ main {
   align-items: center;
   gap: 1rem;
   margin-bottom: 0.5rem;
-}
-
-.follow-button {
-  padding: 6px 16px;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  cursor: pointer;
-  outline: none;
-  transition: all 0.3s;
-  background: #ff2d55;
-  color: white;
-  border: 1px solid #ff2d55;
-}
-
-.follow-button.is-followed {
-  background: white;
-  color: #ff2d55;
 }
 
 .user-id {

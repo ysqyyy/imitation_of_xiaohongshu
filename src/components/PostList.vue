@@ -13,9 +13,12 @@
         <div class="post-desc">{{ post.title }}</div>
         <div class="post-meta">
           <span class="post-author">{{ post.author.name }}</span>
-          <span class="post-like" @click.stop="handleLikePost(post)" style="cursor: pointer"
-            >♡ {{ post.like }}</span
-          >
+          <LikeButton
+            type="post"
+            :id="post.id"
+            :initial-like-count="post.like"
+            :initial-is-liked="post.isLike"
+          />
         </div>
       </div>
     </div>
@@ -30,7 +33,8 @@
 <script setup lang="ts">
 import { defineProps } from 'vue'
 import type { PostCard } from '../types/index'
-import { goDetail, likePost } from '../api/detail'
+import { goDetail } from '../api/detail'
+import LikeButton from './LikeButton.vue'
 
 // 定义组件属性
 const props = defineProps<{
@@ -41,11 +45,6 @@ const props = defineProps<{
 // 跳转到详情页
 function handleGoDetail(id: number) {
   goDetail(id)
-}
-
-// 处理点赞事件
-function handleLikePost(post: PostCard) {
-  likePost(post.id)
 }
 </script>
 

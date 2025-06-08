@@ -27,13 +27,11 @@
             @click="otherUser(post?.author.id ?? 0)"
           ></div>
           <div class="author-name">{{ post?.author.name || '用户' }}</div>
-          <div
+          <FollowButton
             v-if="!post?.author.isAuthor"
-            class="follow-btn"
-            @click="followUser(post?.author.id ?? 0)"
-          >
-            关注
-          </div>
+            :user-id="post?.author.id ?? 0"
+            :initial-followed="post?.author.isFollowed"
+          />
         </div>
 
         <!-- 正文内容 -->
@@ -69,7 +67,12 @@
                 <div class="comment-text">{{ comment.content }}</div>
                 <div class="comment-actions">
                   <span class="time">{{ comment.time }}</span>
-                  <span class="like">♥ {{ comment.like }}</span>
+                  <LikeButton
+                    type="comment"
+                    :id="comment.id"
+                    :initial-like-count="comment.like"
+                    :initial-is-liked="comment.isLike"
+                  />
                   <span class="reply" @click="replyComment(comment)">回复</span>
                   <span
                     v-if="comment.reply && comment.reply.length > 0"
@@ -104,7 +107,12 @@
                       <div class="reply-text">{{ reply.content }}</div>
                       <div class="reply-actions">
                         <span class="time">{{ reply.time }}</span>
-                        <span class="like">♥ {{ reply.like }}</span>
+                        <LikeButton
+                          type="comment"
+                          :id="reply.id"
+                          :initial-like-count="reply.like"
+                          :initial-is-liked="reply.isLike"
+                        />
                         <span class="reply" @click="replyComment(reply)">回复</span>
                       </div>
                     </div>
@@ -131,9 +139,19 @@
           <!-- 互动按钮区 -->
           <div class="action-buttons">
             <div class="action-btn">
-              <i class="icon like-icon" @click="sendLike(post?.id)"></i>
-              <span>{{ post?.like }}</span>
+              <LikeButton
+                type="post"
+                :id="post?.id ?? 0"
+                :initial-like-count="post?.like ?? 0"
+                :initial-is-liked="post?.isLike ?? false"
+              >
+                <template #icon="{ isLiked, likeCount }">
+                  <i class="icon like-icon" :class="isLiked ? 'fas' : 'far'"></i>
+                  <span>{{ likeCount }}</span>
+                </template>
+              </LikeButton>
             </div>
+
             <div class="action-btn">
               <i class="icon fav-icon" @click="sendFav(post?.id)"></i>
               <span>收藏</span>
@@ -157,15 +175,9 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import type { PostDetail, Comment } from '../types'
-import {
-  closeDetail,
-  getPostById,
-  sendComment,
-  likePost,
-  favoritePost,
-  deletePost,
-} from '../api/detail'
-import { followUser } from '../api/user'
+import { closeDetail, getPostById, sendComment, favoritePost, deletePost } from '../api/detail'
+import FollowButton from '../components/FollowButton.vue'
+import LikeButton from '../components/LikeButton.vue'
 import { useRouter } from 'vue-router'
 import * as PublishView from './PublishView.vue'
 const router = useRouter()
@@ -266,24 +278,7 @@ watch(
   },
   { immediate: true },
 )
-// 点赞帖子
-async function sendLike(id?: number) {
-  if (!id || !post.value) return
-  try {
-    const result = await likePost(id)
-    if (result && post.value) {
-      post.value.isLike = result.isLike
-      post.value.like = result.like
-    }
-  } catch (error) {
-    console.error('点赞操作失败:', error)
-    // 失败时回滚本地状态
-    if (post.value) {
-      post.value.isLike = !post.value.isLike
-      post.value.like += post.value.isLike ? 1 : -1
-    }
-  }
-}
+
 // 收藏帖子
 async function sendFav(id?: number) {
   if (!id || !post.value) return
@@ -291,7 +286,6 @@ async function sendFav(id?: number) {
     const result = await favoritePost(id)
     if (result && post.value) {
       post.value.isFav = result.isFav
-      post.value.fav = result.fav
     }
   } catch (error) {
     console.error('收藏操作失败:', error)
@@ -718,8 +712,14 @@ footer {
   background-repeat: no-repeat;
 }
 
-.like-icon {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23666'%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/%3E%3C/svg%3E");
+/* 未点赞状态 - 轮廓图标 */
+.far.like-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/%3E%3C/svg%3E");
+}
+/*
+/* 已点赞状态 - 实心图标，颜色变为红色 */
+.fas.like-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff2d55'%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/%3E%3C/svg%3E");
 }
 .fav-icon {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23666'%3E%3Cpath d='M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z'/%3E%3C/svg%3E");

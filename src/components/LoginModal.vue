@@ -109,7 +109,7 @@
 import { ref, reactive, watch } from 'vue'
 import { login, register } from '../api/auth'
 import type { LoginRequest, RegisterRequest } from '../types/auth'
-
+import auth from '../utils/auth'
 interface Props {
   visible: boolean
 }
@@ -126,8 +126,8 @@ const loginLoading = ref(false)
 const registerLoading = ref(false)
 
 const loginForm = reactive<LoginRequest>({
-  email: '',
-  password: '',
+  email: '1525040849@qq.com',
+  password: '123456',
 })
 
 const registerForm = reactive<RegisterRequest>({
@@ -170,16 +170,13 @@ const handleLogin = async () => {
   loginLoading.value = true
   try {
     const result = await login(loginForm)
-    if (result.success) {
-      // 登录成功，保存用户信息到localStorage或状态管理
-      localStorage.setItem('token', result.token)
-      localStorage.setItem('userInfo', JSON.stringify(result.userInfo))
-      closeModal()
-      // 可以在这里触发全局状态更新
-      alert('登录成功！')
-    } else {
-      alert(result.message || '登录失败')
-    }
+    // 登录成功，保存用户信息到localStorage或状态管理
+    auth.setToken(result.token, 7) // 保存7天
+    localStorage.setItem('userInfo', JSON.stringify(result.user))
+    // console.log('user:', result.user)
+    closeModal()
+    // 可以在这里触发全局状态更新
+    alert('登录成功！')
   } catch (error) {
     console.error('Login error:', error)
     alert('登录失败，请稍后重试')

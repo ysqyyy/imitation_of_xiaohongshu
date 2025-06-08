@@ -1,6 +1,13 @@
 import request from '@/utils/request'
 import router from '@/router'
 import type { PostDetail } from '@/types/index'
+import type {
+  SuccessResponse,
+  CommentResponse,
+  LikeResponse,
+  FavoriteResponse,
+  PublishResponse,
+} from '@/types/api'
 
 // 发布帖子
 export async function publishPost(postData: {
@@ -9,12 +16,17 @@ export async function publishPost(postData: {
   tags: string[]
   imgs: string[]
   private: boolean
-}) {
-  return request({
-    url: '/api/post/publish',
-    method: 'post',
-    data: postData,
-  })
+}): Promise<PublishResponse | null> {
+  try {
+    const res = await request.post<PublishResponse>('/post/publish', postData)
+    if (res.code === 200) {
+      return res.data
+    }
+    return null
+  } catch (error) {
+    console.error('发布帖子失败:', error)
+    return null
+  }
 }
 
 //点开帖子
@@ -42,11 +54,15 @@ export function closeDetail() {
  * @param id 帖子ID
  * @return PostDetail 帖子详情
  */
-
 export async function getPostById(id: number): Promise<PostDetail | null> {
   try {
-    const res = await request.get(`/detail/${id}`)
-    return res.data
+    const res = await request.get<PostDetail>(`http://localhost:8888/posts/detail?id=${id}`)
+    // console.log('获取帖子详情请求:', res)
+    if (res.code === 200) {
+      console.log('获取帖子详情成功:', res.data)
+      return res.data
+    }
+    return null
   } catch (error) {
     console.error('获取帖子详情失败:', error)
     return null
@@ -59,30 +75,61 @@ export async function getPostById(id: number): Promise<PostDetail | null> {
  * @param content 评论内容
  * @return 成功或失败信息
  */
-export async function sendComment(id: number, content: string, type: string) {
-  let res
+export async function sendComment(
+  id: number,
+  content: string,
+  type: string,
+): Promise<CommentResponse | null> {
   try {
     if (type === 'post') {
-      res = await request.post(`/posts/${id}/comments`, { content })
+      const res = await request.post<CommentResponse>(`/posts/${id}/comments`, { content })
+      if (res.code === 200) {
+        return res.data
+      }
     } else if (type === 'comment') {
-      res = await request.post(`/comments/${id}/comments`, { content })
+      const res = await request.post<CommentResponse>(`/comments/${id}/comments`, { content })
+      if (res.code === 200) {
+        return res.data
+      }
     }
+    return null
   } catch (error) {
-    console.error('Error sending comment:', error)
+    console.error('发送评论失败:', error)
+    return null
   }
-  return res
 }
 
 /** 点赞帖子
  * @param id 帖子ID
  * @return 成功或失败信息
  */
-export async function likePost(id: number) {
+export async function likePost(id: number): Promise<LikeResponse | null> {
   try {
-    const res = await request.post('/detail/like', { id })
-    return res.data
+    const res = await request.post<LikeResponse>(`http://localhost:8888/userLikes/posts/${id}`)
+    console.log('点赞帖子请求:', res)
+    if (res.code === 200) {
+      return res.data
+    }
+    return null
   } catch (error) {
     console.error('点赞失败:', error)
+    return null
+  }
+}
+/** 取消点赞帖子
+ * @param id 帖子ID
+ * @return 成功或失败信息
+ */
+export async function unlikePost(id: number): Promise<LikeResponse | null> {
+  try {
+    const res = await request.delete<LikeResponse>(`http://localhost:8888/userLikes/posts/${id}`)
+    console.log('取消点赞帖子请求:', res)
+    if (res.code === 200) {
+      return res.data
+    }
+    return null
+  } catch (error) {
+    console.error('取消点赞失败:', error)
     return null
   }
 }
@@ -91,12 +138,52 @@ export async function likePost(id: number) {
  ** @param id 帖子ID
  * @return 成功或失败信息
  */
-export async function favoritePost(id: number) {
+export async function favoritePost(id: number): Promise<FavoriteResponse | null> {
   try {
-    const res = await request.post('/detail/fav', { id })
-    return res.data
+    const res = await request.post<FavoriteResponse>('/detail/fav', { id })
+    if (res.code === 200) {
+      return res.data
+    }
+    return null
   } catch (error) {
     console.error('收藏失败:', error)
+    return null
+  }
+}
+
+/** 点赞评论
+ * @param id 评论ID
+ * @return 成功或失败信息
+ */
+export async function likeComment(id: number): Promise<LikeResponse | null> {
+  try {
+    const res = await request.post<LikeResponse>(`http://localhost:8888/userLikes/comments/${id}`)
+    if (res.code === 200) {
+      console.log('点赞评论请求:', res)
+
+      return res.data
+    }
+    return null
+  } catch (error) {
+    console.error('评论点赞失败:', error)
+    return null
+  }
+}
+/** 取消点赞评论
+ * @param id 评论ID
+ * @return 成功或失败信息
+ */
+export async function unlikeComment(id: number): Promise<LikeResponse | null> {
+  try {
+    const res = await request.delete<LikeResponse>(`http://localhost:8888/userLikes/comments/${id}`)
+    if (res.code === 200) {
+      console.log('取消点赞pinglun请求:', res)
+
+      return res.data
+    }
+    return null
+  } catch (error) {
+    console.error('取消评论点赞失败:', error)
     return null
   }
 }
@@ -116,14 +203,13 @@ export async function editPost(
     imgs: string[]
     private: boolean
   },
-) {
+): Promise<SuccessResponse | null> {
   try {
-    const res = await request({
-      url: `/api/post/edit/${id}`,
-      method: 'put',
-      data: postData,
-    })
-    return res.data
+    const res = await request.put<SuccessResponse>(`/post/edit/${id}`, postData)
+    if (res.code === 200) {
+      return res.data
+    }
+    return null
   } catch (error) {
     console.error('编辑帖子失败:', error)
     return null
@@ -135,13 +221,13 @@ export async function editPost(
  * @param id 帖子ID
  * @return 成功或失败信息
  */
-export async function deletePost(id: number) {
+export async function deletePost(id: number): Promise<SuccessResponse | null> {
   try {
-    const res = await request({
-      url: `/api/post/delete/${id}`,
-      method: 'delete',
-    })
-    return res.data
+    const res = await request.delete<SuccessResponse>(`/post/delete/${id}`)
+    if (res.code === 200) {
+      return res.data
+    }
+    return null
   } catch (error) {
     console.error('删除帖子失败:', error)
     return null

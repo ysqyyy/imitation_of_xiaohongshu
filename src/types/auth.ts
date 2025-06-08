@@ -12,14 +12,17 @@ export interface RegisterRequest {
   confirmPassword: string
 }
 
-// 登录响应数据
-export interface LoginResponse {
-  success: boolean
-  message?: string
-  token: string
-  userInfo: AuthUserInfo
+// // 登录响应数据
+// export interface LoginResponse {
+//   code: number
+//   msg?: string
+//   data: object
+// }
+interface ApiResponse<T = unknown> {
+  code: number
+  msg: string
+  data: T
 }
-
 // 注册响应数据
 export interface RegisterResponse {
   success: boolean
@@ -29,9 +32,6 @@ export interface RegisterResponse {
 
 // 认证用户信息
 export interface AuthUserInfo {
-  id: string
-  username: string
-  email: string
-  avatar?: string
-  isLoggedIn: boolean
+  user: object
+  token: string
 }
