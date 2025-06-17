@@ -3,13 +3,8 @@
     <div class="video-player-container">
       <!-- 关闭按钮 -->
       <button class="close-btn" @click="closePlayer">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-          <path
-            d="M18 6L6 18M6 6l12 12"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-          />
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M18 6L6 18M6 6l12 12" stroke="white" stroke-width="2" stroke-linecap="round" />
         </svg>
       </button>
 
@@ -18,7 +13,7 @@
         <video
           ref="videoRef"
           :src="currentPost?.video"
-          :poster="currentPost?.img"
+          :poster="getPostImage(currentPost)"
           controls
           autoplay
           muted
@@ -91,11 +86,11 @@
 
 <script lang="ts" setup>
 import { ref, computed, watch, nextTick } from 'vue'
-import type { PostCard } from '../types/index'
+import type { PostCard, PostDetail } from '../types/index'
 
 interface Props {
   visible: boolean
-  posts: PostCard[]
+  posts: (PostCard | PostDetail)[]
   currentIndex: number
 }
 
@@ -113,6 +108,18 @@ const videoRef = ref<HTMLVideoElement>()
 const currentPost = computed(() => props.posts[props.currentIndex])
 const hasPrevious = computed(() => props.currentIndex > 0)
 const hasNext = computed(() => props.currentIndex < props.posts.length - 1)
+
+// 获取帖子的图片，处理 PostCard 和 PostDetail 的不同结构
+function getPostImage(post: PostCard | PostDetail): string {
+  if ('img' in post) {
+    // PostCard 类型
+    return post.img
+  } else if ('imgs' in post && post.imgs.length > 0) {
+    // PostDetail 类型
+    return post.imgs[0]
+  }
+  return '' // 默认空字符串
+}
 
 // 监听当前索引变化，切换视频
 watch(
@@ -220,12 +227,14 @@ const handleVideoEnded = () => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
   backdrop-filter: blur(10px);
+  color: white;
 }
 
 .close-btn:hover {
   background: rgba(0, 0, 0, 0.7);
+  transform: scale(1.05);
 }
 
 .video-wrapper {

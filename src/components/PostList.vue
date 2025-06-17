@@ -9,6 +9,18 @@
       >
         <div class="post-img-wrap">
           <img :src="post.img" class="post-img" alt="帖子图片" />
+          <!-- 调试信息：显示帖子类型 -->
+          <div class="post-type-indicator">{{ post.type || 'NO TYPE' }}</div>
+          <!-- 视频播放图标 - 只在类型为视频时显示 -->
+          <div v-if="post.type === 'video'" class="video-play-icon">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="white">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+          <!-- 视频时长 - 只在类型为视频且有时长时显示 -->
+          <div v-if="post.type === 'video' && post.duration" class="video-duration">
+            {{ formatDuration(post.duration) }}
+          </div>
         </div>
         <div class="post-desc">{{ post.title }}</div>
         <div class="post-meta">
@@ -45,6 +57,19 @@ const props = defineProps<{
 // 跳转到详情页
 function handleGoDetail(id: number) {
   goDetail(id)
+}
+
+// 格式化视频时长（秒转为 mm:ss 格式）
+function formatDuration(seconds: number): string {
+  if (!seconds) return '00:00'
+
+  const minutes = Math.floor(seconds / 60)
+  const remainingSeconds = Math.floor(seconds % 60)
+
+  const formattedMinutes = minutes < 10 ? `0${minutes}` : `${minutes}`
+  const formattedSeconds = remainingSeconds < 10 ? `0${remainingSeconds}` : `${remainingSeconds}`
+
+  return `${formattedMinutes}:${formattedSeconds}`
 }
 </script>
 
@@ -88,6 +113,36 @@ export default {}
   width: 100%;
   height: 240px; /* 统一图片高度 */
   overflow: hidden;
+}
+
+/* 视频播放图标样式 */
+.video-play-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60px;
+  height: 60px;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none; /* 确保点击事件传递到底层 */
+}
+
+/* 视频时长样式 */
+.video-duration {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  padding: 3px 6px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  pointer-events: none; /* 确保点击事件传递到底层 */
 }
 
 .post-img {
@@ -136,6 +191,20 @@ export default {}
 
 .empty-text {
   font-size: 1.1rem;
+}
+
+/* 调试样式 */
+.post-type-indicator {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 3px 6px;
+  background-color: rgba(255, 0, 0, 0.7);
+  color: white;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  z-index: 10;
 }
 
 @media (max-width: 1200px) {

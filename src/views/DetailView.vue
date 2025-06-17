@@ -1,11 +1,46 @@
 <template>
   <div class="modal-mask" @click.self="close">
     <div class="detail-container">
-      <!-- 左侧图片集 -->
+      <!-- 左侧图片或视频区域 -->
       <div class="image">
-        <img v-if="post" :src="post.imgs[currentImgIndex]" class="main-image" />
-        <!-- 缩略图集 (显示所有图片) -->
-        <div class="thumbnails">
+        <!-- 当帖子有视频时显示视频 -->
+        <div v-if="post?.video" class="video-container">
+          <video
+            ref="videoRef"
+            :src="post.video"
+            :poster="post.imgs?.[0]"
+            class="main-video"
+            controls
+            @click="openVideoPlayer"
+          ></video>
+          <div class="video-play-button" @click="openVideoPlayer">
+            <svg viewBox="0 0 24 24" width="48" height="48" fill="white">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+        </div>
+
+        <!-- 没有视频时显示图片 -->
+        <div v-else-if="post" class="image-container">
+          <img :src="post.imgs[currentImgIndex]" class="main-image" />
+
+          <!-- 左右切换按钮 - 仅在有多张图片且没有视频时显示 -->
+          <div v-if="post.imgs.length > 1" class="img-navigation">
+            <div class="nav-arrow prev" @click="prevImage">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="white">
+                <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+              </svg>
+            </div>
+            <div class="nav-arrow next" @click="nextImage">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="white">
+                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- 缩略图集  -->
+        <div v-if="!post?.video && post?.imgs && post.imgs.length > 1" class="thumbnails">
           <img
             v-for="(img, id) in post?.imgs || []"
             :key="id"
@@ -167,17 +202,29 @@
       <!-- 关闭按钮 -->
       <button class="close-btn" @click="close">×</button>
     </div>
+
+    <!-- 视频播放器全屏弹窗 -->
+    <VideoPlayer
+      v-if="showVideoPlayer"
+      :visible="showVideoPlayer"
+      :posts="videoPostsList"
+      :current-index="currentVideoIndex"
+      @update:visible="showVideoPlayer = $event"
+      @update:current-index="currentVideoIndex = $event"
+    />
+
     <!-- 编辑帖子弹窗 -->
     <PublishView.default v-if="showPublish" :edit-mode="true" @close="closePublishModal" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, onUnmounted } from 'vue'
 import type { PostDetail, Comment } from '../types'
 import { closeDetail, getPostById, sendComment, favoritePost, deletePost } from '../api/detail'
 import FollowButton from '../components/FollowButton.vue'
 import LikeButton from '../components/LikeButton.vue'
+import VideoPlayer from '../components/VideoPlayer.vue'
 import { useRouter } from 'vue-router'
 import * as PublishView from './PublishView.vue'
 const router = useRouter()
@@ -190,6 +237,9 @@ const replyTarget = ref<Comment | null>(null)
 const currentImgIndex = ref(0) // 当前显示的图片索引
 const expandedComments = ref<number[]>([]) // 存储已展开评论的ID
 const showPublish = ref(false) // 控制编辑弹窗的显示
+const showVideoPlayer = ref(false) // 控制视频播放器显示
+const videoPostsList = ref<PostDetail[]>([]) // 可播放视频的帖子列表
+const currentVideoIndex = ref(0) // 当前播放的视频索引
 
 // 编辑帖子
 function editPost() {
@@ -247,16 +297,90 @@ function closePublishModal() {
   }
 }
 
+// 获取相关视频帖子
+async function fetchRelatedVideoPosts() {
+  try {
+    // 在实际应用中，这里应该调用一个API来获取相关视频帖子
+    // 这里为了简单起见，我们只把当前帖子作为唯一的视频帖子
+    if (post.value?.video) {
+      videoPostsList.value = [post.value]
+      return true
+    }
+    return false
+  } catch (error) {
+    console.error('获取相关视频失败:', error)
+    return false
+  }
+}
+
+// 打开视频播放器
+async function openVideoPlayer() {
+  if (!post.value?.video) return
+
+  const hasVideos = await fetchRelatedVideoPosts()
+  if (hasVideos) {
+    currentVideoIndex.value = 0 // 默认从第一个视频开始播放
+    showVideoPlayer.value = true
+  }
+}
+
+// 处理键盘左右键切换图片
+function handleKeyPress(e: KeyboardEvent) {
+  // 只有当没有视频并且有多张图片时才启用键盘切换
+  if (!post.value?.video && post.value?.imgs && post.value.imgs.length > 1) {
+    if (e.key === 'ArrowLeft') {
+      prevImage()
+    } else if (e.key === 'ArrowRight') {
+      nextImage()
+    }
+  }
+}
+
+// 切换到上一张图片
+function prevImage() {
+  if (!post.value?.imgs || post.value.imgs.length <= 1) return
+
+  if (currentImgIndex.value > 0) {
+    currentImgIndex.value--
+  } else {
+    currentImgIndex.value = post.value.imgs.length - 1
+  }
+}
+
+// 切换到下一张图片
+function nextImage() {
+  if (!post.value?.imgs || post.value.imgs.length <= 1) return
+
+  if (currentImgIndex.value < post.value.imgs.length - 1) {
+    currentImgIndex.value++
+  } else {
+    currentImgIndex.value = 0
+  }
+}
+
 onMounted(async () => {
   if (props.id) {
     const result = await getPostById(Number(props.id))
     if (result) {
       post.value = result
+
+      // 如果帖子有视频，预先获取相关视频
+      if (result.video) {
+        await fetchRelatedVideoPosts()
+      }
     } else {
       console.error('帖子不存在或获取失败')
       router.back()
     }
   }
+
+  // 添加键盘事件监听
+  window.addEventListener('keydown', handleKeyPress)
+})
+
+// 在组件卸载时移除键盘事件监听
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyPress)
 })
 // 监听 id 变化，以便在不同帖子间切换
 watch(
@@ -369,17 +493,19 @@ function toggleReplies(commentId: number) {
 .image {
   flex: 1;
   height: 100%;
-  min-width: 45%;
-  background: rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  position: relative;
   display: flex;
   flex-direction: column;
+  background-color: #f8f8f8;
 }
 
 .main-image {
-  flex: 1;
-  width: 100%;
-  height: calc(100% - 80px);
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
+  display: block;
+  margin: 0 auto;
 }
 
 .thumbnails {
@@ -401,12 +527,109 @@ function toggleReplies(commentId: number) {
 }
 
 .thumbnail.active {
+  border-color: #ff2d55;
+}
+
+.thumbnail:hover {
+  transform: scale(1.05);
+}
+
+/* 视频容器样式 */
+.video-container {
+  width: 100%;
+  height: calc(100% - 70px);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  background-color: #000;
+}
+
+.main-video {
+  width: 100%;
+  height: auto;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* 视频播放按钮 */
+.video-play-button {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px;
+  height: 80px;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  opacity: 0.8;
+  transition:
+    opacity 0.3s,
+    transform 0.3s;
+}
+
+.video-container:hover .video-play-button {
   opacity: 1;
   border: 2px solid #ff2d55;
 }
 
 .thumbnail.placeholder {
   background: #333;
+}
+
+/* 图片容器和导航按钮 */
+.image-container {
+  position: relative;
+  width: 100%;
+  height: calc(100% - 80px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #000;
+}
+
+.img-navigation {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: none; /* 让点击事件穿透到底层图片 */
+}
+
+.nav-arrow {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto; /* 允许点击 */
+  opacity: 0.7;
+  transition: opacity 0.3s;
+  margin: 0 16px;
+}
+
+.nav-arrow:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.nav-arrow.prev {
+  left: 16px;
+}
+
+.nav-arrow.next {
+  right: 16px;
 }
 
 /* 右侧内容区域 */

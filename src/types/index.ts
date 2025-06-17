@@ -8,6 +8,7 @@ export type PostCard = {
   isLike: boolean
   private?: boolean
   tabs?: string[]
+
   video?: string // 视频URL
   type?: 'image' | 'video' // 内容类型
   duration?: number // 视频时长（秒）
@@ -59,4 +60,8 @@ export type PostDetail = {
   isFav: boolean
   private?: boolean
   comments?: Comment[]
+
+  video?: string // 视频URL
+  type?: 'image' | 'video' // 内容类型
+  duration?: number // 视频时长
 }

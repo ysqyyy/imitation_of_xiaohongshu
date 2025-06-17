@@ -56,8 +56,9 @@ export function closeDetail() {
  */
 export async function getPostById(id: number): Promise<PostDetail | null> {
   try {
-    const res = await request.get<PostDetail>(`http://localhost:8888/posts/detail?id=${id}`)
+    // const res = await request.get<PostDetail>(`http://localhost:8888/posts/detail?id=${id}`)
     // console.log('获取帖子详情请求:', res)
+    const res = await request.get<PostDetail>(`/detail/${id}`)
     if (res.code === 200) {
       console.log('获取帖子详情成功:', res.data)
       return res.data
