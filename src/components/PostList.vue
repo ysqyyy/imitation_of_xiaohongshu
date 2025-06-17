@@ -9,8 +9,6 @@
       >
         <div class="post-img-wrap">
           <img :src="post.img" class="post-img" alt="帖子图片" />
-          <!-- 调试信息：显示帖子类型 -->
-          <div class="post-type-indicator">{{ post.type || 'NO TYPE' }}</div>
           <!-- 视频播放图标 - 只在类型为视频时显示 -->
           <div v-if="post.type === 'video'" class="video-play-icon">
             <svg viewBox="0 0 24 24" width="32" height="32" fill="white">
@@ -23,8 +21,17 @@
           </div>
         </div>
         <div class="post-desc">{{ post.title }}</div>
+
+        <!-- 帖子标签 -->
+        <div v-if="post.tags && post.tags.length > 0" class="post-tags">
+          <span v-for="(tag, index) in post.tags" :key="index" class="tag"># {{ tag }}</span>
+        </div>
+
         <div class="post-meta">
-          <span class="post-author">{{ post.author.name }}</span>
+          <div class="author-info">
+            <img :src="post.author.img" alt="作者头像" class="author-avatar" />
+            <span class="post-author">{{ post.author.name }}</span>
+          </div>
           <LikeButton
             type="post"
             :id="post.id"
@@ -156,23 +163,56 @@ export default {}
   padding: 1.1rem 1.2rem 0.5rem 1.2rem;
   font-size: 1.05rem;
   color: #333;
-  min-height: 3.5rem; /* 增加最小高度，确保有足够空间显示标题 */
+  min-height: 2.5rem; /* 减少最小高度 */
   display: -webkit-box;
   -webkit-line-clamp: 2; /* 限制最多显示2行 */
   line-clamp: 2; /* 标准属性 */
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  flex-grow: 1; /* 使描述部分占据剩余空间 */
+  margin-bottom: 0.2rem; /* 添加底部间距 */
 }
 
 .post-meta {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 1.2rem 1rem 1.2rem;
-  color: #aaa;
-  font-size: 1rem;
+  padding: 0.5rem 1.2rem 1rem 1.2rem;
+  color: #777;
+  font-size: 0.9rem;
+  margin-top: auto; /* 保持在底部 */
+}
+
+/* 帖子标签样式 */
+.post-tags {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0 1.2rem;
+  margin-bottom: 0.8rem;
+  gap: 6px;
+}
+
+.tag {
+  font-size: 0.8rem;
+  color: #666;
+  background-color: #f5f5f5;
+  padding: 2px 8px;
+  border-radius: 10px;
+  display: inline-block;
+}
+
+/* 作者信息样式 */
+.author-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.author-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .empty-list {
@@ -191,20 +231,6 @@ export default {}
 
 .empty-text {
   font-size: 1.1rem;
-}
-
-/* 调试样式 */
-.post-type-indicator {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  padding: 3px 6px;
-  background-color: rgba(255, 0, 0, 0.7);
-  color: white;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-  z-index: 10;
 }
 
 @media (max-width: 1200px) {

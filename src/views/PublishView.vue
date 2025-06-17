@@ -3,28 +3,73 @@
     <div class="publish-container">
       <!-- 左侧图片集 -->
       <div class="image-section">
-        <!-- 主图 -->
-        <div class="main-image-container">
-          <img
-            v-if="selectedImages.length > 0"
-            :src="selectedImages[currentImgIndex]"
-            class="main-image"
-          />
-          <div v-else class="upload-placeholder" @click="triggerImageUpload">
-            <div class="upload-icon">+</div>
-            <div>点击上传图片</div>
-          </div>
-          <input
-            type="file"
-            ref="fileInput"
-            multiple
-            accept="image/*"
-            style="display: none"
-            @change="handleImageUpload"
-          />
+        <!-- 上传类型切换 -->
+        <div class="upload-type-selector">
+          <button
+            class="type-btn"
+            :class="{ active: contentType === 'image' }"
+            @click="switchContentType('image')"
+          >
+            图片
+          </button>
+          <button
+            class="type-btn"
+            :class="{ active: contentType === 'video' }"
+            @click="switchContentType('video')"
+          >
+            视频
+          </button>
         </div>
-        <!-- 缩略图集 -->
-        <div class="thumbnails">
+
+        <!-- 主图/视频区域 -->
+        <div class="main-content-container">
+          <!-- 视频上传/显示 -->
+          <div v-if="contentType === 'video'" class="video-container">
+            <video
+              v-if="videoFile"
+              :src="videoUrl"
+              class="main-video"
+              controls
+              ref="videoPreview"
+            ></video>
+            <div v-else class="upload-placeholder" @click="triggerVideoUpload">
+              <div class="upload-icon">+</div>
+              <div>点击上传视频</div>
+            </div>
+            <input
+              type="file"
+              ref="videoInput"
+              accept="video/*"
+              style="display: none"
+              @change="handleVideoUpload"
+            />
+            <div v-if="videoFile" class="remove-video" @click="removeVideo">删除视频</div>
+          </div>
+
+          <!-- 图片上传/显示 -->
+          <div v-else class="image-display">
+            <img
+              v-if="selectedImages.length > 0"
+              :src="selectedImages[currentImgIndex]"
+              class="main-image"
+            />
+            <div v-else class="upload-placeholder" @click="triggerImageUpload">
+              <div class="upload-icon">+</div>
+              <div>点击上传图片</div>
+            </div>
+            <input
+              type="file"
+              ref="fileInput"
+              multiple
+              accept="image/*"
+              style="display: none"
+              @change="handleImageUpload"
+            />
+          </div>
+        </div>
+
+        <!-- 缩略图集 (仅图片模式显示) -->
+        <div v-if="contentType === 'image'" class="thumbnails">
           <div
             v-for="(img, id) in selectedImages"
             :key="id"
@@ -129,8 +174,17 @@ const emit = defineEmits(['close'])
 
 // 图片上传相关
 const fileInput = ref<HTMLInputElement | null>(null)
+const videoInput = ref<HTMLInputElement | null>(null)
 const selectedImages = ref<string[]>([])
 const currentImgIndex = ref(0)
+
+// 视频上传相关
+const videoFile = ref<File | null>(null)
+const videoUrl = ref<string>('')
+const videoPreview = ref<HTMLVideoElement | null>(null)
+
+// 内容类型（图片/视频）
+const contentType = ref<'image' | 'video'>('image')
 
 // 帖子数据
 const postData = ref({
@@ -149,11 +203,11 @@ const postId = ref<number | null>(null)
 
 // 判断是否可以发布
 const canPublish = computed(() => {
-  return (
-    selectedImages.value.length > 0 &&
-    postData.value.title.trim() !== '' &&
-    postData.value.content.trim() !== ''
-  )
+  const hasContent =
+    (contentType.value === 'image' && selectedImages.value.length > 0) ||
+    (contentType.value === 'video' && videoFile.value !== null)
+
+  return hasContent && postData.value.title.trim() !== '' && postData.value.content.trim() !== ''
 })
 
 // 初始化表单数据
@@ -168,8 +222,21 @@ onMounted(() => {
         postData.value.content = editData.content || ''
         postData.value.tags = editData.tags || []
         postData.value.private = editData.private || false
-        selectedImages.value = editData.imgs || []
         postId.value = editData.id || null
+
+        // 检查内容类型
+        if (editData.video) {
+          // 如果有视频，则设置为视频类型
+          contentType.value = 'video'
+          videoUrl.value = editData.video
+          // 由于是编辑模式，我们不需要实际的 File 对象
+          // 只需要URL来显示视频
+          videoFile.value = new File([], 'placeholder.mp4', { type: 'video/mp4' })
+        } else {
+          // 否则设置为图片类型
+          contentType.value = 'image'
+          selectedImages.value = editData.imgs || []
+        }
 
         // 清除localStorage中的数据，避免下次打开时仍然存在
         localStorage.removeItem('editPostData')
@@ -179,6 +246,27 @@ onMounted(() => {
     }
   }
 })
+
+// 切换内容类型（图片/视频）
+function switchContentType(type: 'image' | 'video') {
+  // 如果已经有内容，提示用户
+  if (
+    (contentType.value === 'image' && selectedImages.value.length > 0 && type === 'video') ||
+    (contentType.value === 'video' && videoFile.value && type === 'image')
+  ) {
+    if (!confirm('切换内容类型将清空已上传的内容，确定要切换吗？')) {
+      return
+    }
+    // 清空内容
+    if (type === 'video') {
+      selectedImages.value = []
+    } else {
+      removeVideo()
+    }
+  }
+
+  contentType.value = type
+}
 
 // 触发文件选择
 function triggerImageUpload() {
@@ -215,6 +303,40 @@ function removeImage(index: number) {
   }
 }
 
+// 触发视频选择
+function triggerVideoUpload() {
+  videoInput.value?.click()
+}
+
+// 处理视频上传
+function handleVideoUpload(event: Event) {
+  const input = event.target as HTMLInputElement
+  if (input.files && input.files.length > 0) {
+    const file = input.files[0]
+
+    // 检查文件大小（限制为100MB）
+    if (file.size > 100 * 1024 * 1024) {
+      alert('视频文件过大，请上传小于100MB的视频')
+      return
+    }
+
+    videoFile.value = file
+    videoUrl.value = URL.createObjectURL(file)
+
+    // 重置文件输入，以便可以再次选择同一文件
+    input.value = ''
+  }
+}
+
+// 删除视频
+function removeVideo() {
+  if (videoUrl.value) {
+    URL.revokeObjectURL(videoUrl.value)
+  }
+  videoFile.value = null
+  videoUrl.value = ''
+}
+
 // 添加标签
 function addTag() {
   const tag = newTag.value.trim()
@@ -235,18 +357,52 @@ async function submitPost() {
 
   publishing.value = true
   try {
-    // 构建数据
-    const data = {
-      ...postData.value,
-      imgs: selectedImages.value,
+    // 构建基础数据
+    const baseData = {
+      title: postData.value.title,
+      content: postData.value.content,
+      tags: postData.value.tags,
+      private: postData.value.private,
+      imgs: [] as string[], // 默认空数组
     }
 
-    if (props.editMode && postId.value) {
-      // 编辑模式
-      await apiEditPost(postId.value, data)
+    // 根据内容类型添加不同的数据
+    if (contentType.value === 'image') {
+      // 图片类型
+      baseData.imgs = selectedImages.value
+
+      // 添加到API数据中
+      const apiData = {
+        ...baseData,
+        type: 'image' as const,
+      }
+
+      if (props.editMode && postId.value) {
+        await apiEditPost(postId.value, apiData)
+      } else {
+        await apiPublishPost(apiData)
+      }
     } else {
-      // 新建模式
-      await apiPublishPost(data)
+      // 视频类型
+      if (videoFile.value) {
+        // 在实际应用中，这里应该上传视频文件到服务器，并获取URL
+        // 这里简化处理，直接使用本地URL
+
+        // 添加到API数据中
+        const apiData = {
+          ...baseData,
+          type: 'video' as const,
+          video: videoUrl.value,
+          // 可以添加封面图，这里简化处理
+          imgs: videoUrl.value ? [videoUrl.value] : [],
+        }
+
+        if (props.editMode && postId.value) {
+          await apiEditPost(postId.value, apiData)
+        } else {
+          await apiPublishPost(apiData)
+        }
+      }
     }
     close()
   } catch (error) {
@@ -408,6 +564,78 @@ export default {}
 
 .add-more:hover .plus-icon {
   color: #ff2d55;
+}
+
+/* 上传类型选择器 */
+.upload-type-selector {
+  display: flex;
+  padding: 10px;
+  background: #f8f8f8;
+  border-bottom: 1px solid #eee;
+}
+
+.type-btn {
+  flex: 1;
+  padding: 8px 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.type-btn.active {
+  background: #ff2d55;
+  color: white;
+  font-weight: 500;
+}
+
+.type-btn:not(.active):hover {
+  background: #f0f0f0;
+}
+
+/* 主内容容器 */
+.main-content-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: #f8f8f8;
+  overflow: hidden;
+}
+
+/* 视频容器 */
+.video-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.main-video {
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+}
+
+.remove-video {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.remove-video:hover {
+  background: rgba(255, 0, 0, 0.7);
 }
 
 /* 右侧内容区域 */

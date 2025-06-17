@@ -26,6 +26,7 @@
 | password | string | 是   | 用户密码 |
 
 **请求示例：**
+
 ```json
 {
   "email": "user@example.com",
@@ -60,14 +61,15 @@
 
 **请求参数：**
 
-| 参数名          | 类型   | 必填 | 描述         |
-| --------------- | ------ | ---- | ------------ |
-| username        | string | 是   | 用户名       |
-| email           | string | 是   | 用户邮箱     |
+| 参数名          | 类型   | 必填 | 描述          |
+| --------------- | ------ | ---- | ------------- |
+| username        | string | 是   | 用户名        |
+| email           | string | 是   | 用户邮箱      |
 | password        | string | 是   | 密码(6位以上) |
-| confirmPassword | string | 是   | 确认密码     |
+| confirmPassword | string | 是   | 确认密码      |
 
 **请求示例：**
+
 ```json
 {
   "username": "新用户",
@@ -110,6 +112,7 @@
 **请求参数：** 无
 
 **响应数据：**
+
 ```json
 {
   "success": true,
@@ -134,6 +137,7 @@
 **请求参数：** 无
 
 **响应数据：**
+
 ```json
 {
   "success": true,
@@ -306,25 +310,28 @@
 
 **请求参数：**
 
-| 参数名 | 类型   | 必填 | 描述                    | 默认值 |
-| ------ | ------ | ---- | ----------------------- | ------ |
-| page   | number | 否   | 页码，从1开始           | 1      |
-| limit  | number | 否   | 每页数量，建议5-20之间  | 10     |
+| 参数名 | 类型   | 必填 | 描述                   | 默认值 |
+| ------ | ------ | ---- | ---------------------- | ------ |
+| page   | number | 否   | 页码，从1开始          | 1      |
+| limit  | number | 否   | 每页数量，建议5-20之间 | 10     |
 
 **请求示例：**
+
 ```
 GET /api/posts/recommend?page=1&limit=5
 ```
 
 **响应数据结构：**
+
 ```typescript
 interface RecommendPostsResponse {
-  list: PostCard[]  // 帖子列表
-  total: number     // 总数据量
+  list: PostCard[] // 帖子列表
+  total: number // 总数据量
 }
 ```
 
 **成功响应示例：**
+
 ```json
 {
   "code": 200,
@@ -346,7 +353,7 @@ interface RecommendPostsResponse {
           "isFollowed": false
         },
         "like": 888,
-        "tabs": ["前端", "Vue3", "教程"]
+        "tags": ["前端", "Vue3", "教程"]
       },
       {
         "id": 2,
@@ -361,7 +368,7 @@ interface RecommendPostsResponse {
           "isFollowed": true
         },
         "like": 666,
-        "tabs": ["美食", "早餐", "生活"]
+        "tags": ["美食", "早餐", "生活"]
       }
     ],
     "total": 20
@@ -372,20 +379,23 @@ interface RecommendPostsResponse {
 **内容类型说明：**
 
 1. **图片帖子** (`type: "image"`)
+
    - 包含：美食、穿搭、摄影、宠物、手工、植物等生活内容
-   - 字段：`id`, `title`, `img`, `author`, `like`, `tabs`, `type`
+   - 字段：`id`, `title`, `img`, `author`, `like`, `tags`, `type`
 
 2. **视频帖子** (`type: "video"`)
    - 包含：技术教程、健身、美妆、音乐、烘焙等视频内容
    - 额外字段：`video`(视频URL), `duration`(时长秒数)
 
 **分页说明：**
+
 - 总共约20条精心设计的推荐内容
 - 建议每页5条，共4页
 - 支持瀑布流布局的3列展示
 - 视频和图片内容混合推荐
 
 **错误响应：**
+
 ```json
 {
   "code": 500,
@@ -494,15 +504,15 @@ export type Author = {
 // 帖子卡片(列表展示)
 export type PostCard = {
   id: number
-  img: string                    // 封面图片URL
-  title: string                  // 帖子标题
-  author: Author                 // 作者信息
-  like: number                   // 点赞数
-  private?: boolean              // 是否私密
-  tabs?: string[]                // 标签数组
-  video?: string                 // 视频URL（视频类型帖子）
-  type?: 'image' | 'video'       // 内容类型：图片或视频
-  duration?: number              // 视频时长（秒）
+  img: string // 封面图片URL
+  title: string // 帖子标题
+  author: Author // 作者信息
+  like: number // 点赞数
+  private?: boolean // 是否私密
+  tags?: string[] // 标签数组
+  video?: string // 视频URL（视频类型帖子）
+  type?: 'image' | 'video' // 内容类型：图片或视频
+  duration?: number // 视频时长（秒）
 }
 
 // 帖子详情
@@ -511,7 +521,7 @@ export type PostDetail = {
   imgs: string[]
   title: string
   content: string
-  tabs: string[]
+  tags: string[]
   author: Author
   like: number
   fav: number
@@ -542,7 +552,7 @@ export type Comment = {
 ```typescript
 // 获取推荐帖子响应类型
 export interface RecommendPostsResponse {
-  list: PostCard[]  // 帖子列表
-  total: number     // 总数据量
+  list: PostCard[] // 帖子列表
+  total: number // 总数据量
 }
 ```

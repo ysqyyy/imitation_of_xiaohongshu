@@ -44,8 +44,8 @@
         </div>
       </div>
 
-      <div v-if="post.tabs && post.tabs.length" class="post-tags">
-        <span v-for="tag in post.tabs" :key="tag" class="tag"> #{{ tag }} </span>
+      <div v-if="post.tags && post.tags.length" class="post-tags">
+        <span v-for="tag in post.tags" :key="tag" class="tag"> #{{ tag }} </span>
       </div>
     </div>
   </div>

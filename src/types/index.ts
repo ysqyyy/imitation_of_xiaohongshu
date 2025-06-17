@@ -7,7 +7,7 @@ export type PostCard = {
   like: number
   isLike: boolean
   private?: boolean
-  tabs?: string[]
+  tags?: string[]
 
   video?: string // 视频URL
   type?: 'image' | 'video' // 内容类型
@@ -51,7 +51,7 @@ export type PostDetail = {
   imgs: string[]
   title: string
   content: string
-  tabs: string[]
+  tags: string[]
   author: Author
   like: number
   fav: number

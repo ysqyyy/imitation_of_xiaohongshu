@@ -18,15 +18,15 @@
       </section>
 
       <section class="posts-section">
-        <div class="tabs">
+        <div class="tags">
           <span
-            v-for="tab in tabs"
-            :key="tab.key"
-            class="tab"
-            :class="{ active: activeTab === tab.key }"
-            @click="selectTab(tab.key)"
+            v-for="tag in tags"
+            :key="tag.key"
+            class="tag"
+            :class="{ active: activetag === tag.key }"
+            @click="selecttag(tag.key)"
           >
-            {{ tab.label }}
+            {{ tag.label }}
           </span>
         </div>
         <PostList :posts="posts" :emptyText="getEmptyText()" />
@@ -57,16 +57,16 @@ const user = ref<UserInfo>({
   likedPosts: [],
 })
 // 标签页响应式数据
-const tabs = ref([
+const tags = ref([
   { label: '我的笔记', key: 'note' },
   { label: '点赞', key: 'like' },
   { label: '收藏', key: 'fav' },
 ])
-const activeTab = ref('note')
-function selectTab(tabKey: string) {
-  activeTab.value = tabKey
+const activetag = ref('note')
+function selecttag(tagKey: string) {
+  activetag.value = tagKey
   if (userCache) {
-    posts.value = getPostsByTab(userCache, tabKey)
+    posts.value = getPostsBytag(userCache, tagKey)
   }
 }
 
@@ -78,21 +78,21 @@ onMounted(async () => {
   const userData = await getUserInfo()
   userCache = userData
   user.value = userData
-  posts.value = getPostsByTab(user.value, activeTab.value)
+  posts.value = getPostsBytag(user.value, activetag.value)
 })
 
-function getPostsByTab(user: UserInfo, tab: string) {
-  if (tab === 'note') return user.myPosts || []
-  if (tab === 'fav') return user.favPosts || []
-  if (tab === 'like') return user.likedPosts || []
+function getPostsBytag(user: UserInfo, tag: string) {
+  if (tag === 'note') return user.myPosts || []
+  if (tag === 'fav') return user.favPosts || []
+  if (tag === 'like') return user.likedPosts || []
   return []
 }
 
 // 获取空状态文本
 function getEmptyText() {
-  if (activeTab.value === 'note') return '笔记'
-  if (activeTab.value === 'fav') return '收藏'
-  if (activeTab.value === 'like') return '点赞'
+  if (activetag.value === 'note') return '笔记'
+  if (activetag.value === 'fav') return '收藏'
+  if (activetag.value === 'like') return '点赞'
   return '内容'
 }
 </script>
@@ -170,13 +170,13 @@ main {
   box-sizing: border-box; /* 确保内边距不会增加元素的总宽度 */
 }
 
-.tabs {
+.tags {
   display: flex;
   gap: 2.5rem;
   margin-bottom: 2rem;
 }
 
-.tab {
+.tag {
   font-size: 1.1rem;
   color: #888;
   cursor: pointer;
@@ -187,7 +187,7 @@ main {
     border 0.2s;
 }
 
-.tab.active {
+.tag.active {
   color: #ff2d55;
   border-bottom: 2px solid #ff2d55;
 }

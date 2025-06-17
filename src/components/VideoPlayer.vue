@@ -51,8 +51,8 @@
               </button>
             </div>
           </div>
-          <div v-if="currentPost?.tabs && currentPost.tabs.length" class="video-tags">
-            <span v-for="tag in currentPost.tabs" :key="tag" class="tag"> #{{ tag }} </span>
+          <div v-if="currentPost?.tags && currentPost.tags.length" class="video-tags">
+            <span v-for="tag in currentPost.tags" :key="tag" class="tag"> #{{ tag }} </span>
           </div>
         </div>
       </div>

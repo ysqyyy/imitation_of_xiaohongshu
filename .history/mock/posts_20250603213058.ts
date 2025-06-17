@@ -15,9 +15,10 @@ const posts: PostCard[] = [
     },
     img: 'https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=500&auto=format&fit=crop&q=60',
     like: 888,
-    tabs: ['前端', 'Vue3', '教程'],
+    tags: ['前端', 'Vue3', '教程'],
     type: 'video',
-    video: 'https://vd4.bdstatic.com/mda-ree9un2b1mjvt33c/cae_h264/1747292379850822234/mda-ree9un2b1mjvt33c.mp4?abtest=peav_l52&appver=&auth_key=1748957207-0-0-4f5e3da367d79a0d47d05250b03f624b&bcevod_channel=searchbox_feed&cd=0&cr=0&did=cfcd208495d565ef66e7dff9f98764da&logid=3407311679&model=&osver=&pd=1&pt=4&sl=945&sle=1&split=799792&vid=14129995574504724938&vt=1',
+    video:
+      'https://vd4.bdstatic.com/mda-ree9un2b1mjvt33c/cae_h264/1747292379850822234/mda-ree9un2b1mjvt33c.mp4?abtest=peav_l52&appver=&auth_key=1748957207-0-0-4f5e3da367d79a0d47d05250b03f624b&bcevod_channel=searchbox_feed&cd=0&cr=0&did=cfcd208495d565ef66e7dff9f98764da&logid=3407311679&model=&osver=&pd=1&pt=4&sl=945&sle=1&split=799792&vid=14129995574504724938&vt=1',
     duration: 180,
   },
   // 美食图片
@@ -33,7 +34,7 @@ const posts: PostCard[] = [
     },
     img: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=500&auto=format&fit=crop&q=60',
     like: 666,
-    tabs: ['美食', '早餐', '生活'],
+    tags: ['美食', '早餐', '生活'],
     type: 'image',
   },
   // 旅行视频
@@ -49,7 +50,7 @@ const posts: PostCard[] = [
     },
     img: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=500&auto=format&fit=crop&q=60',
     like: 1234,
-    tabs: ['旅行', '大理', '攻略'],
+    tags: ['旅行', '大理', '攻略'],
     type: 'video',
     video: 'https://www.w3schools.com/html/mov_bbb.mp4',
     duration: 420,
@@ -67,7 +68,7 @@ const posts: PostCard[] = [
     },
     img: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=500&auto=format&fit=crop&q=60',
     like: 999,
-    tabs: ['穿搭', '春季', '温柔'],
+    tags: ['穿搭', '春季', '温柔'],
     type: 'image',
   },
   // 健身视频
@@ -83,7 +84,7 @@ const posts: PostCard[] = [
     },
     img: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=500&auto=format&fit=crop&q=60',
     like: 2333,
-    tabs: ['健身', '燃脂', '居家运动'],
+    tags: ['健身', '燃脂', '居家运动'],
     type: 'video',
     video: 'https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4',
     duration: 600,
@@ -101,7 +102,7 @@ const posts: PostCard[] = [
     },
     img: 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=500&auto=format&fit=crop&q=60',
     like: 555,
-    tabs: ['摄影', '夜景', '技巧'],
+    tags: ['摄影', '夜景', '技巧'],
     type: 'image',
   },
   // 美妆视频
@@ -117,7 +118,7 @@ const posts: PostCard[] = [
     },
     img: 'https://images.unsplash.com/photo-1556909114-3af1bc58e83a?w=500&auto=format&fit=crop&q=60',
     like: 1888,
-    tabs: ['美妆', '淡妆', '教程'],
+    tags: ['美妆', '淡妆', '教程'],
     type: 'video',
     video: 'https://www.w3schools.com/html/mov_bbb.mp4',
     duration: 300,
@@ -135,7 +136,7 @@ const posts: PostCard[] = [
     },
     img: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=500&auto=format&fit=crop&q=60',
     like: 3333,
-    tabs: ['宠物', '猫咪', '日常'],
+    tags: ['宠物', '猫咪', '日常'],
     type: 'image',
   },
   // 美食制作视频
@@ -151,7 +152,7 @@ const posts: PostCard[] = [
     },
     img: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=500&auto=format&fit=crop&q=60',
     like: 2888,
-    tabs: ['美食', '烘焙', '甜点'],
+    tags: ['美食', '烘焙', '甜点'],
     type: 'video',
     video: 'https://www.w3schools.com/html/mov_bbb.mp4',
     duration: 480,
@@ -169,7 +170,7 @@ const posts: PostCard[] = [
     },
     img: 'https://images.unsplash.com/photo-1515378791036-0648a814c963?w=500&auto=format&fit=crop&q=60',
     like: 444,
-    tabs: ['手工', '折纸', 'DIY'],
+    tags: ['手工', '折纸', 'DIY'],
     type: 'image',
   },
   // 职场视频
@@ -185,7 +186,7 @@ const posts: PostCard[] = [
     },
     img: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=500&auto=format&fit=crop&q=60',
     like: 1567,
-    tabs: ['职场', '沟通', '成长'],
+    tags: ['职场', '沟通', '成长'],
     type: 'video',
     video: 'https://www.w3schools.com/html/mov_bbb.mp4',
     duration: 360,
@@ -203,7 +204,7 @@ const posts: PostCard[] = [
     },
     img: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=500&auto=format&fit=crop&q=60',
     like: 777,
-    tabs: ['读书', '推荐', '成长'],
+    tags: ['读书', '推荐', '成长'],
     type: 'image',
   },
   // 编程视频
@@ -219,7 +220,7 @@ const posts: PostCard[] = [
     },
     img: 'https://images.unsplash.com/photo-1633356122102-3fe601e05bd2?w=500&auto=format&fit=crop&q=60',
     like: 1999,
-    tabs: ['前端', 'React', 'Hooks'],
+    tags: ['前端', 'React', 'Hooks'],
     type: 'video',
     video: 'https://www.w3schools.com/html/mov_bbb.mp4',
     duration: 720,
@@ -237,7 +238,7 @@ const posts: PostCard[] = [
     },
     img: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=500&auto=format&fit=crop&q=60',
     like: 888,
-    tabs: ['植物', '阳台', '生活'],
+    tags: ['植物', '阳台', '生活'],
     type: 'image',
   },
   // 音乐视频
@@ -253,7 +254,7 @@ const posts: PostCard[] = [
     },
     img: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500&auto=format&fit=crop&q=60',
     like: 2456,
-    tabs: ['音乐', '吉他', '教学'],
+    tags: ['音乐', '吉他', '教学'],
     type: 'video',
     video: 'https://www.w3schools.com/html/mov_bbb.mp4',
     duration: 540,
@@ -271,7 +272,7 @@ const posts: PostCard[] = [
     },
     img: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=500&auto=format&fit=crop&q=60',
     like: 1234,
-    tabs: ['家居', '极简', '生活'],
+    tags: ['家居', '极简', '生活'],
     type: 'image',
   },
   {
@@ -286,9 +287,10 @@ const posts: PostCard[] = [
     },
     img: 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=500&auto=format&fit=crop&q=60',
     like: 3456,
-    tabs: ['Python', '爬虫', '编程'],
+    tags: ['Python', '爬虫', '编程'],
     type: 'video',
-    video: 'https://vd4.bdstatic.com/mda-ree9un2b1mjvt33c/cae_h264/1747292379850822234/mda-ree9un2b1mjvt33c.mp4?abtest=peav_l52&appver=&auth_key=1748957207-0-0-4f5e3da367d79a0d47d05250b03f624b&bcevod_channel=searchbox_feed&cd=0&cr=0&did=cfcd208495d565ef66e7dff9f98764da&logid=3407311679&model=&osver=&pd=1&pt=4&sl=945&sle=1&split=799792&vid=14129995574504724938&vt=1',
+    video:
+      'https://vd4.bdstatic.com/mda-ree9un2b1mjvt33c/cae_h264/1747292379850822234/mda-ree9un2b1mjvt33c.mp4?abtest=peav_l52&appver=&auth_key=1748957207-0-0-4f5e3da367d79a0d47d05250b03f624b&bcevod_channel=searchbox_feed&cd=0&cr=0&did=cfcd208495d565ef66e7dff9f98764da&logid=3407311679&model=&osver=&pd=1&pt=4&sl=945&sle=1&split=799792&vid=14129995574504724938&vt=1',
     duration: 900,
   },
   {
@@ -303,7 +305,7 @@ const posts: PostCard[] = [
     },
     img: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=500&auto=format&fit=crop&q=60',
     like: 2789,
-    tabs: ['街拍', '穿搭', '春日'],
+    tags: ['街拍', '穿搭', '春日'],
     type: 'image',
   },
   {
@@ -318,7 +320,7 @@ const posts: PostCard[] = [
     },
     img: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=500&auto=format&fit=crop&q=60',
     like: 1567,
-    tabs: ['瑜伽', '健身', '初学者'],
+    tags: ['瑜伽', '健身', '初学者'],
     type: 'video',
     video: 'https://www.w3schools.com/html/mov_bbb.mp4',
     duration: 450,
@@ -335,10 +337,9 @@ const posts: PostCard[] = [
     },
     img: 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=500&auto=format&fit=crop&q=60',
     like: 999,
-    tabs: ['摄影', '手机', '构图'],
+    tags: ['摄影', '手机', '构图'],
     type: 'image',
   },
- 
 ]
 
 export default [
@@ -366,7 +367,7 @@ export default [
       }
       return {
         code: 200,
-        data: posts.filter((post) => post.tabs?.some((tab) => tab === category)),
+        data: posts.filter((post) => post.tags?.some((tag) => tag === category)),
         message: '获取分类帖子成功',
       }
     },
@@ -374,13 +375,13 @@ export default [
   {
     url: '/api/posts/recommend',
     method: 'get',
-    response: ({ query }: { query: { page?: number, limit?: number } }) => {
+    response: ({ query }: { query: { page?: number; limit?: number } }) => {
       const page = query.page || 1
       const limit = query.limit || 10
       return {
         code: 200,
-        data:{
-          list:posts.slice((page - 1) * limit, page * limit),
+        data: {
+          list: posts.slice((page - 1) * limit, page * limit),
           total: posts.length,
         },
         message: '获取推荐帖子成功',

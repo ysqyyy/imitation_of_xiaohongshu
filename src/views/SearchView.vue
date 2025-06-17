@@ -53,7 +53,7 @@ watch(
 const filteredPosts = computed(() => {
   let result = posts.value
   if (activeCategory.value !== 0) {
-    result = result.filter((p) => p.tabs?.[0] === categories[activeCategory.value])
+    result = result.filter((p) => p.tags?.[0] === categories[activeCategory.value])
   }
   return result
 })

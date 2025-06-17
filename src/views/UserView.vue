@@ -20,15 +20,15 @@
       </section>
 
       <section class="posts-section">
-        <div class="tabs">
+        <div class="tags">
           <span
-            v-for="tab in tabs"
-            :key="tab.key"
-            class="tab"
-            :class="{ active: activeTab === tab.key }"
-            @click="selectTab(tab.key)"
+            v-for="tag in tags"
+            :key="tag.key"
+            class="tag"
+            :class="{ active: activetag === tag.key }"
+            @click="selecttag(tag.key)"
           >
-            {{ tab.label }}
+            {{ tag.label }}
           </span>
         </div>
         <PostList :posts="posts" :emptyText="getEmptyText()" />
@@ -66,8 +66,8 @@ const user = ref<UserInfo>({
 })
 
 // 标签页配置
-const tabs = ref([{ label: 'TA的笔记', key: 'note' }])
-const activeTab = ref('note')
+const tags = ref([{ label: 'TA的笔记', key: 'note' }])
+const activetag = ref('note')
 const posts = ref<PostCard[]>([])
 
 // 获取用户信息
@@ -87,12 +87,12 @@ onMounted(async () => {
   }
 })
 
-function selectTab(tabKey: string) {
-  activeTab.value = tabKey
+function selecttag(tagKey: string) {
+  activetag.value = tagKey
 }
 // 获取空状态文本
 function getEmptyText() {
-  if (activeTab.value === 'note') return '笔记'
+  if (activetag.value === 'note') return '笔记'
   return '内容'
 }
 </script>
@@ -170,13 +170,13 @@ main {
   box-sizing: border-box; /* 确保内边距不会增加元素的总宽度 */
 }
 
-.tabs {
+.tags {
   display: flex;
   gap: 2.5rem;
   margin-bottom: 2rem;
 }
 
-.tab {
+.tag {
   font-size: 1.1rem;
   color: #888;
   cursor: pointer;
@@ -187,7 +187,7 @@ main {
     border 0.2s;
 }
 
-.tab.active {
+.tag.active {
   color: #ff2d55;
   border-bottom: 2px solid #ff2d55;
 }

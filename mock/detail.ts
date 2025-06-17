@@ -11,7 +11,7 @@ const postDetailsData: Record<number, PostDetail> = {
     title: 'Vue3 教程',
     content:
       '这是一篇详细的Vue3教程，包含Composition API、响应式系统和生命周期钩子的详细讲解。在这个项目中，我将演示如何创建一个现代化的Vue3应用程序，并展示框架的强大特性。\n\n本教程适合有一定Vue2基础的开发者，但即使你是完全的新手，按照步骤操作也能快速入门。',
-    tabs: ['前端', 'Vue3', '学习', '教程'],
+    tags: ['前端', 'Vue3', '学习', '教程'],
     author: {
       id: 101,
       name: '小明',
@@ -80,7 +80,7 @@ const postDetailsData: Record<number, PostDetail> = {
     title: 'React 实战',
     content:
       '本文将带你从零开始构建一个React应用，涵盖Hooks、Context API和自定义组件。React是前端领域最流行的框架之一，它的组件化思想和虚拟DOM机制极大提升了开发效率和应用性能。\n\n通过这篇实战教程，你将学会如何搭建工程、状态管理以及路由配置等核心知识。',
-    tabs: ['前端', 'React', '实战'],
+    tags: ['前端', 'React', '实战'],
     author: {
       id: 201,
       name: '小红',
@@ -119,7 +119,7 @@ const postDetailsData: Record<number, PostDetail> = {
     title: '小红书仿写',
     content:
       '这是一个使用Vue3和TypeScript开发的小红书仿写项目，实现了主页、发现、个人中心等核心功能。本项目采用了最新的前端技术栈，包括Vite构建工具、Vue Router路由管理和Pinia状态管理。\n\n通过这个项目，你可以学习到如何构建一个完整的社交媒体应用，以及前端工程化的最佳实践。',
-    tabs: ['前端', 'Vue3', '项目实战', '小红书'],
+    tags: ['前端', 'Vue3', '项目实战', '小红书'],
     author: {
       id: 301,
       name: '小刚',
@@ -175,7 +175,7 @@ const postDetailsData: Record<number, PostDetail> = {
     title: '前端面试宝典',
     content:
       '收集整理了前端领域常见的面试题和解答，包括JavaScript、CSS、框架和工程化等各个方面。这份面试宝典汇总了我在大厂面试中遇到的真实问题，以及面试官期望的答案思路。\n\n无论你是准备校招还是社招，这份资料都能帮助你系统性地复习前端知识，提高面试通过率。',
-    tabs: ['前端', '面试', '求职'],
+    tags: ['前端', '面试', '求职'],
     author: {
       id: 401,
       name: '小智',
@@ -199,7 +199,7 @@ const postDetailsData: Record<number, PostDetail> = {
     title: '前端开发教程 - React vs Vue 详细对比',
     content:
       '这个视频详细对比了React和Vue两大前端框架的异同点，包括性能、生态系统、学习曲线等方面。无论你是初学者还是有经验的开发者，这个视频都能帮你更好地理解这两个框架的优缺点，从而做出更适合你项目的选择。',
-    tabs: ['前端', 'React', 'Vue', '技术对比'],
+    tags: ['前端', 'React', 'Vue', '技术对比'],
     author: {
       id: 201,
       name: '技术讲师李老师',
@@ -623,7 +623,7 @@ export default [
           ...postDetailsData[postId],
           title: body.title,
           content: body.content,
-          tabs: body.tags,
+          tags: body.tags,
           imgs: body.imgs,
           private: body.private,
           time: new Date().toLocaleString() + ' (已编辑)',

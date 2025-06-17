@@ -22,7 +22,7 @@ const userInfo: UserInfo = {
       },
       like: 2,
       private: true,
-      tabs: ['生活'],
+      tags: ['生活'],
     },
     {
       id: 2,
@@ -36,7 +36,7 @@ const userInfo: UserInfo = {
       },
       like: 0,
       private: false,
-      tabs: ['美食', '生活'],
+      tags: ['美食', '生活'],
     },
   ],
   likedPosts: [
@@ -52,7 +52,7 @@ const userInfo: UserInfo = {
         isFollowed: false,
       },
       like: 10,
-      tabs: ['生活'],
+      tags: ['生活'],
     },
   ],
   favPosts: [
@@ -68,7 +68,7 @@ const userInfo: UserInfo = {
         isFollowed: true,
       },
       like: 5,
-      tabs: ['旅行', '风景'],
+      tags: ['旅行', '风景'],
     },
   ],
 }
@@ -95,7 +95,7 @@ const otherUserInfo: UserInfo = {
         isAuthor: true,
       },
       like: 126,
-      tabs: ['美食', '家常菜'],
+      tags: ['美食', '家常菜'],
     },
     {
       id: 6,
@@ -108,7 +108,7 @@ const otherUserInfo: UserInfo = {
         isAuthor: true,
       },
       like: 89,
-      tabs: ['旅行', '风景'],
+      tags: ['旅行', '风景'],
     },
     {
       id: 7,
@@ -121,7 +121,7 @@ const otherUserInfo: UserInfo = {
         isAuthor: true,
       },
       like: 210,
-      tabs: ['穿搭', '办公室搭配'],
+      tags: ['穿搭', '办公室搭配'],
     },
   ],
   likedPosts: [],

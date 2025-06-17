@@ -74,8 +74,8 @@
           <h2 class="post-title">{{ post?.title }}</h2>
           <p class="post-text">{{ post?.content }}</p>
           <div class="post-tags">
-            <span v-for="(tab, index) in post?.tabs" :key="index" class="tag"># {{ tab }}</span>
-            <span v-if="!post?.tabs || post?.tabs.length === 0" class="tag"># 生活</span>
+            <span v-for="(tag, index) in post?.tags" :key="index" class="tag"># {{ tag }}</span>
+            <span v-if="!post?.tags || post?.tags.length === 0" class="tag"># 生活</span>
 
             <!-- 作者编辑删除按钮 -->
             <div v-if="post?.author.isAuthor" class="author-actions">
@@ -250,7 +250,7 @@ function editPost() {
     id: post.value.id,
     title: post.value.title,
     content: post.value.content,
-    tags: post.value.tabs,
+    tags: post.value.tags,
     imgs: post.value.imgs,
     private: post.value.private || false,
   }
