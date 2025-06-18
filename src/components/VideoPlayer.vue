@@ -16,12 +16,12 @@
           :poster="getPostImage(currentPost)"
           controls
           autoplay
-          muted
-          loop
           class="video-element"
           @loadedmetadata="handleVideoLoaded"
+          @error="handleVideoError"
           @ended="handleVideoEnded"
         />
+        <div v-if="videoError" class="video-error-message">视频加载失败：{{ videoError }}</div>
       </div>
 
       <!-- 视频信息 -->
@@ -104,20 +104,24 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 const videoRef = ref<HTMLVideoElement>()
+const videoError = ref<string>('')
 
 const currentPost = computed(() => props.posts[props.currentIndex])
 const hasPrevious = computed(() => props.currentIndex > 0)
 const hasNext = computed(() => props.currentIndex < props.posts.length - 1)
 
 // 获取帖子的图片，处理 PostCard 和 PostDetail 的不同结构
-function getPostImage(post: PostCard | PostDetail): string {
-  if ('img' in post) {
-    // PostCard 类型
-    return post.img
-  } else if ('imgs' in post && post.imgs.length > 0) {
-    // PostDetail 类型
+function getPostImage(post: PostCard | PostDetail | undefined): string {
+  if (!post) return ''
+
+  if ('imgs' in post && post.imgs && post.imgs.length > 0) {
+    // 使用 imgs 数组的第一张图片
     return post.imgs[0]
+  } else if ('img' in post && post.img) {
+    // 兼容旧的 img 字段
+    return post.img
   }
+
   return '' // 默认空字符串
 }
 
@@ -126,6 +130,8 @@ watch(
   () => props.currentIndex,
   () => {
     if (videoRef.value) {
+      console.log('切换视频:', currentPost.value?.title, '视频URL:', currentPost.value?.video)
+      videoError.value = ''
       nextTick(() => {
         videoRef.value?.load()
       })
@@ -178,8 +184,17 @@ const goToNext = () => {
 
 const handleVideoLoaded = () => {
   if (videoRef.value && props.visible) {
-    videoRef.value.play()
+    videoError.value = ''
+    videoRef.value.play().catch((err) => {
+      console.error('视频播放失败:', err)
+      videoError.value = '播放失败，请检查视频链接是否有效'
+    })
   }
+}
+
+const handleVideoError = (e: Event) => {
+  console.error('视频加载错误:', e)
+  videoError.value = '视频无法播放，请检查视频链接是否有效'
 }
 
 const handleVideoEnded = () => {
@@ -251,6 +266,19 @@ const handleVideoEnded = () => {
   height: 100%;
   border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.video-error-message {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 10px 15px;
+  border-radius: 4px;
+  max-width: 80%;
+  text-align: center;
 }
 
 .video-info {

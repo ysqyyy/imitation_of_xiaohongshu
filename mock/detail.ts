@@ -3,11 +3,11 @@ import type { PostDetail, Comment } from '../src/types/index'
 const postDetailsData: Record<number, PostDetail> = {
   1: {
     id: 1,
-    imgs: [
-      'https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=500&auto=format&fit=crop&q=60',
-      'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=500&auto=format&fit=crop&q=60',
-      'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=500&auto=format&fit=crop&q=60',
-    ],
+    // imgs: [
+    //   'https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=500&auto=format&fit=crop&q=60',
+    //   'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=500&auto=format&fit=crop&q=60',
+    //   'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=500&auto=format&fit=crop&q=60',
+    // ],
     title: 'Vue3 教程',
     content:
       '这是一篇详细的Vue3教程，包含Composition API、响应式系统和生命周期钩子的详细讲解。在这个项目中，我将演示如何创建一个现代化的Vue3应用程序，并展示框架的强大特性。\n\n本教程适合有一定Vue2基础的开发者，但即使你是完全的新手，按照步骤操作也能快速入门。',
@@ -24,6 +24,10 @@ const postDetailsData: Record<number, PostDetail> = {
     time: '2023-12-10 14:30',
     isLike: false,
     isFav: false,
+    type: 'video',
+    video:
+      'https://vd4.bdstatic.com/mda-ree9un2b1mjvt33c/cae_h264/1747292379850822234/mda-ree9un2b1mjvt33c.mp4?abtest=peav_l52&appver=&auth_key=1748957207-0-0-4f5e3da367d79a0d47d05250b03f624b&bcevod_channel=searchbox_feed&cd=0&cr=0&did=cfcd208495d565ef66e7dff9f98764da&logid=3407311679&model=&osver=&pd=1&pt=4&sl=945&sle=1&split=799792&vid=14129995574504724938&vt=1',
+    duration: 180,
     comments: [
       {
         id: 1001,

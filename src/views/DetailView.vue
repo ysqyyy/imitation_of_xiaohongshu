@@ -12,7 +12,9 @@
             class="main-video"
             controls
             @click="openVideoPlayer"
+            @error="handleVideoError"
           ></video>
+          <div v-if="videoError" class="video-error-message">{{ videoError }}</div>
           <div class="video-play-button" @click="openVideoPlayer">
             <svg viewBox="0 0 24 24" width="48" height="48" fill="white">
               <path d="M8 5v14l11-7z" />
@@ -240,6 +242,37 @@ const showPublish = ref(false) // 控制编辑弹窗的显示
 const showVideoPlayer = ref(false) // 控制视频播放器显示
 const videoPostsList = ref<PostDetail[]>([]) // 可播放视频的帖子列表
 const currentVideoIndex = ref(0) // 当前播放的视频索引
+const videoError = ref<string>('') // 视频错误信息
+
+// 视频错误处理
+function handleVideoError(e: Event) {
+  console.error('视频加载错误:', e)
+  videoError.value = '视频无法播放，请检查网络连接或视频链接是否有效'
+
+  // 检查视频链接
+  const videoElement = e.target as HTMLVideoElement
+  if (videoElement && videoElement.src) {
+    console.log('视频地址:', videoElement.src)
+
+    // 测试其他可能的视频格式
+    if (post.value && post.value.video) {
+      // 如果是相对路径，尝试转换为绝对路径
+      if (post.value.video.startsWith('/')) {
+        const newSrc = window.location.origin + post.value.video
+        console.log('尝试使用绝对路径:', newSrc)
+        videoElement.src = newSrc
+        return
+      }
+
+      // 尝试添加协议
+      if (!post.value.video.startsWith('http')) {
+        const newSrc = 'https://' + post.value.video.replace(/^\/\//, '')
+        console.log('尝试添加协议:', newSrc)
+        videoElement.src = newSrc
+      }
+    }
+  }
+}
 
 // 编辑帖子
 function editPost() {
@@ -303,9 +336,11 @@ async function fetchRelatedVideoPosts() {
     // 在实际应用中，这里应该调用一个API来获取相关视频帖子
     // 这里为了简单起见，我们只把当前帖子作为唯一的视频帖子
     if (post.value?.video) {
+      console.log('当前帖子有视频:', post.value.video)
       videoPostsList.value = [post.value]
       return true
     }
+    console.warn('当前帖子没有视频')
     return false
   } catch (error) {
     console.error('获取相关视频失败:', error)
@@ -315,12 +350,20 @@ async function fetchRelatedVideoPosts() {
 
 // 打开视频播放器
 async function openVideoPlayer() {
-  if (!post.value?.video) return
+  if (!post.value?.video) {
+    console.error('没有视频可播放')
+    return
+  }
+
+  console.log('打开视频播放器', post.value.video)
 
   const hasVideos = await fetchRelatedVideoPosts()
   if (hasVideos) {
+    console.log('视频列表准备完毕', videoPostsList.value)
     currentVideoIndex.value = 0 // 默认从第一个视频开始播放
     showVideoPlayer.value = true
+  } else {
+    console.error('获取视频列表失败')
   }
 }
 
@@ -545,6 +588,20 @@ function toggleReplies(commentId: number) {
   overflow: hidden;
   cursor: pointer;
   background-color: #000;
+}
+
+.video-error-message {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 10px 15px;
+  border-radius: 4px;
+  max-width: 80%;
+  text-align: center;
+  z-index: 5;
 }
 
 .main-video {
