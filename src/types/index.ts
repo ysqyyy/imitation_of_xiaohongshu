@@ -24,8 +24,8 @@ export interface UserInfo {
   likes: number
   isFollowed?: boolean
   myPosts?: PostCard[]
-  likedPosts: PostCard[]
-  favPosts: PostCard[]
+  likedPosts?: PostCard[]
+  favPosts?: PostCard[]
 }
 //post、comment作者
 export type Author = {

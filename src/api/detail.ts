@@ -31,6 +31,33 @@ export async function publishPost(postData: {
   }
 }
 
+/**
+ * 编辑帖子
+ * @param id 帖子ID
+ * @param postData 帖子数据
+ * @return 成功或失败信息
+ */
+export async function editPost(
+  id: number,
+  postData: {
+    title: string
+    content: string
+    tags: string[]
+    imgs: string[]
+    private: boolean
+  },
+): Promise<SuccessResponse | null> {
+  try {
+    const res = await request.put<SuccessResponse>(`/post/edit/${id}`, postData)
+    if (res.code === 200) {
+      return res.data
+    }
+    return null
+  } catch (error) {
+    console.error('编辑帖子失败:', error)
+    return null
+  }
+}
 //通过ID获取帖子详情  ok
 export async function getPostById(id: number): Promise<PostDetail | null> {
   try {
@@ -79,38 +106,11 @@ export async function sendComment(
   }
 }
 
-/**
- * 编辑帖子
- * @param id 帖子ID
- * @param postData 帖子数据
- * @return 成功或失败信息
- */
-export async function editPost(
-  id: number,
-  postData: {
-    title: string
-    content: string
-    tags: string[]
-    imgs: string[]
-    private: boolean
-  },
-): Promise<SuccessResponse | null> {
-  try {
-    const res = await request.put<SuccessResponse>(`/post/edit/${id}`, postData)
-    if (res.code === 200) {
-      return res.data
-    }
-    return null
-  } catch (error) {
-    console.error('编辑帖子失败:', error)
-    return null
-  }
-}
-
-//删除帖子
+//删除帖子 ok
 export async function deletePost(id: number): Promise<SuccessResponse | null> {
   try {
-    const res = await request.delete<SuccessResponse>(`/post/delete/${id}`)
+    const res = await request.delete<SuccessResponse>(`http://localhost:8888/posts/delete/${id}`)
+    console.log('删除帖子请求:', res)
     if (res.code === 200) {
       return res.data
     }

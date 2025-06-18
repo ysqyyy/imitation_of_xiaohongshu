@@ -334,13 +334,13 @@ async function deletePostConfirm() {
   if (confirm('确定要删除这篇帖子吗？删除后将无法恢复。')) {
     try {
       const result = await deletePost(post.value.id)
-      if (result && result.success) {
+      if (result) {
         alert('删除成功')
         close() // 关闭详情页
         // 可能还需要刷新列表页
         router.go(0) // 刷新页面
       } else {
-        alert('删除失败：' + (result?.message || '未知错误'))
+        alert('删除失败：' + '未知错误')
       }
     } catch (error) {
       console.error('删除帖子失败:', error)
