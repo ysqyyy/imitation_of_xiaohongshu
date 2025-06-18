@@ -207,12 +207,11 @@
 
     <!-- 视频播放器全屏弹窗 -->
     <VideoPlayer
-      v-if="showVideoPlayer"
+      v-if="showVideoPlayer && post"
+      :posts="post"
       :visible="showVideoPlayer"
-      :posts="videoPostsList"
-      :current-index="currentVideoIndex"
       @update:visible="showVideoPlayer = $event"
-      @update:current-index="currentVideoIndex = $event"
+      @post-changed="handlePostChanged"
     />
 
     <!-- 编辑帖子弹窗 -->
@@ -240,7 +239,6 @@ const currentImgIndex = ref(0) // 当前显示的图片索引
 const expandedComments = ref<number[]>([]) // 存储已展开评论的ID
 const showPublish = ref(false) // 控制编辑弹窗的显示
 const showVideoPlayer = ref(false) // 控制视频播放器显示
-const videoPostsList = ref<PostDetail[]>([]) // 可播放视频的帖子列表
 const currentVideoIndex = ref(0) // 当前播放的视频索引
 const videoError = ref<string>('') // 视频错误信息
 
@@ -330,41 +328,16 @@ function closePublishModal() {
   }
 }
 
-// 获取相关视频帖子
-async function fetchRelatedVideoPosts() {
-  try {
-    // 在实际应用中，这里应该调用一个API来获取相关视频帖子
-    // 这里为了简单起见，我们只把当前帖子作为唯一的视频帖子
-    if (post.value?.video) {
-      console.log('当前帖子有视频:', post.value.video)
-      videoPostsList.value = [post.value]
-      return true
-    }
-    console.warn('当前帖子没有视频')
-    return false
-  } catch (error) {
-    console.error('获取相关视频失败:', error)
-    return false
-  }
-}
-
 // 打开视频播放器
-async function openVideoPlayer() {
+function openVideoPlayer() {
   if (!post.value?.video) {
     console.error('没有视频可播放')
     return
   }
 
   console.log('打开视频播放器', post.value.video)
-
-  const hasVideos = await fetchRelatedVideoPosts()
-  if (hasVideos) {
-    console.log('视频列表准备完毕', videoPostsList.value)
-    currentVideoIndex.value = 0 // 默认从第一个视频开始播放
-    showVideoPlayer.value = true
-  } else {
-    console.error('获取视频列表失败')
-  }
+  currentVideoIndex.value = 0 // 默认从第一个视频开始播放
+  showVideoPlayer.value = true
 }
 
 // 处理键盘左右键切换图片
@@ -407,9 +380,9 @@ onMounted(async () => {
     if (result) {
       post.value = result
 
-      // 如果帖子有视频，预先获取相关视频
+      // 如果帖子有视频，预先处理视频相关逻辑
       if (result.video) {
-        await fetchRelatedVideoPosts()
+        console.log('帖子包含视频:', result.video)
       }
     } else {
       console.error('帖子不存在或获取失败')
@@ -503,6 +476,25 @@ function toggleReplies(commentId: number) {
     // 如果未展开，则展开
     expandedComments.value.push(commentId)
   }
+}
+
+// 处理来自视频播放器的帖子变更
+function handlePostChanged(updatedPost: PostDetail) {
+  console.log('接收到视频播放器帖子更新:', updatedPost)
+
+  // 如果是当前帖子，直接更新
+  if (post.value && updatedPost.id === post.value.id) {
+    post.value = updatedPost
+    return
+  }
+
+  // 如果是新的帖子，导航到该帖子的详情页
+  // 可以选择多种方式：
+  // 1. 直接替换当前帖子
+  post.value = updatedPost
+
+  // 2. 或者导航到新的详情页（取消注释以启用）
+  // goDetail(updatedPost.id)
 }
 </script>
 

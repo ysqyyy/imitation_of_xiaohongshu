@@ -41,16 +41,26 @@
         </div>
       </div>
     </div>
+
     <!-- 无内容显示 -->
     <div class="empty-list" v-else>
       <div class="empty-icon">📝</div>
       <div class="empty-text">暂无{{ emptyText }}</div>
     </div>
+
+    <!-- 底部加载指示器和交叉观察目标 -->
+    <div v-if="props.hasMore" ref="loadMoreTrigger" class="load-more-trigger">
+      <div v-if="props.isLoading" class="loading-indicator">
+        <div class="loading-spinner"></div>
+        <span>加载更多...</span>
+      </div>
+      <div v-else class="load-more-text">向下滑动加载更多</div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { defineProps } from 'vue'
+import { defineProps, ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import type { PostCard } from '../types/index'
 import { goDetail } from '../api/detail'
 import LikeButton from './LikeButton.vue'
@@ -59,13 +69,79 @@ import LikeButton from './LikeButton.vue'
 const props = defineProps<{
   posts: PostCard[]
   emptyText?: string
+  hasMore?: boolean
+  isLoading?: boolean
 }>()
+
+// 定义事件
+const emit = defineEmits<{
+  (e: 'load-more'): void
+}>()
+
+// 滚动观察目标元素
+const loadMoreTrigger = ref<HTMLElement | null>(null)
+let observer: IntersectionObserver | null = null
 
 // 跳转到详情页
 function handleGoDetail(id: number) {
   goDetail(id)
 }
 
+// 初始化交叉观察器
+function setupIntersectionObserver() {
+  if (!loadMoreTrigger.value) return
+
+  // 创建观察器
+  observer = new IntersectionObserver(
+    (entries) => {
+      const entry = entries[0]
+
+      // 如果目标元素进入视口，且有更多数据可加载，且当前不在加载中
+      if (entry.isIntersecting && props.hasMore && !props.isLoading) {
+        console.log('滚动到底部，触发加载更多')
+        emit('load-more')
+      }
+    },
+    {
+      root: null, // 默认为视口
+      rootMargin: '0px 0px 200px 0px', // 提前200px触发
+      threshold: 0.1, // 当目标元素有10%进入视口时触发
+    },
+  )
+
+  // 开始观察目标元素
+  observer.observe(loadMoreTrigger.value)
+}
+
+// 清理观察器
+function cleanupIntersectionObserver() {
+  if (observer) {
+    observer.disconnect()
+    observer = null
+  }
+}
+
+// 监听帖子列表变化，重新设置观察器
+watch(
+  () => props.posts.length,
+  () => {
+    // 如果帖子更新了，需要重新设置观察器
+    nextTick(() => {
+      cleanupIntersectionObserver()
+      setupIntersectionObserver()
+    })
+  },
+)
+
+// 组件挂载时设置观察器
+onMounted(() => {
+  setupIntersectionObserver()
+})
+
+// 组件卸载时清理观察器
+onUnmounted(() => {
+  cleanupIntersectionObserver()
+})
 // 格式化视频时长（秒转为 mm:ss 格式）
 function formatDuration(seconds: number): string {
   if (!seconds) return '00:00'
@@ -213,6 +289,40 @@ export default {}
   height: 24px;
   border-radius: 50%;
   object-fit: cover;
+}
+
+/* 加载更多触发器样式 */
+.load-more-trigger {
+  text-align: center;
+  padding: 2rem 0;
+  color: #999;
+  font-size: 0.9rem;
+}
+
+.loading-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 45, 85, 0.3);
+  border-radius: 50%;
+  border-top-color: #ff2d55;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.load-more-text {
+  opacity: 0.7;
 }
 
 .empty-list {

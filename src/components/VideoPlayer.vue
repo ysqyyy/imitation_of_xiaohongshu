@@ -79,25 +79,30 @@
       </div>
 
       <!-- 视频计数器 -->
-      <div class="video-counter">{{ props.currentIndex + 1 }} / {{ props.posts.length }}</div>
+      <div class="video-counter">{{ currentIndex + 1 }} / {{ videoPosts.length }}</div>
+
+      <!-- 加载状态 -->
+      <div v-if="isLoading" class="loading-indicator">
+        <div class="spinner"></div>
+        <span>正在加载更多视频...</span>
+      </div>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch, nextTick } from 'vue'
-import type { PostCard, PostDetail } from '../types/index'
+import { ref, computed, watch, nextTick, onMounted } from 'vue'
+import type { PostDetail } from '../types/index'
+import { fetchRelatedVideos as apiFetchRelatedVideos } from '../api/posts'
 
 interface Props {
   visible: boolean
-  posts: (PostCard | PostDetail)[]
-  currentIndex: number
+  posts: PostDetail
 }
 
 interface Emits {
   (e: 'update:visible', value: boolean): void
-  (e: 'update:currentIndex', value: number): void
-  (e: 'load-more'): void
+  (e: 'post-changed', value: PostDetail): void
 }
 
 const props = defineProps<Props>()
@@ -105,36 +110,104 @@ const emit = defineEmits<Emits>()
 
 const videoRef = ref<HTMLVideoElement>()
 const videoError = ref<string>('')
+const currentIndex = ref(0)
+const videoPosts = ref<PostDetail[]>([])
+const isLoading = ref(false)
+const page = ref(1)
+const hasMoreVideos = ref(true)
 
-const currentPost = computed(() => props.posts[props.currentIndex])
-const hasPrevious = computed(() => props.currentIndex > 0)
-const hasNext = computed(() => props.currentIndex < props.posts.length - 1)
+// 当前显示的帖子
+const currentPost = computed(() => videoPosts.value[currentIndex.value] || null)
 
-// 获取帖子的图片，处理 PostCard 和 PostDetail 的不同结构
-function getPostImage(post: PostCard | PostDetail | undefined): string {
+// 是否有上一个或下一个视频
+const hasPrevious = computed(() => currentIndex.value > 0)
+const hasNext = computed(() => currentIndex.value < videoPosts.value.length - 1)
+
+// 获取帖子的图片，处理 PostDetail 的不同结构
+function getPostImage(post: PostDetail | null): string {
   if (!post) return ''
 
-  if ('imgs' in post && post.imgs && post.imgs.length > 0) {
+  if (post.imgs && post.imgs.length > 0) {
     // 使用 imgs 数组的第一张图片
     return post.imgs[0]
-  } else if ('img' in post && post.img) {
-    // 兼容旧的 img 字段
-    return post.img
   }
 
   return '' // 默认空字符串
 }
 
+// 获取相关视频帖子 todo
+async function fetchRelatedVideos(postId: number, pageNum: number = 1): Promise<PostDetail[]> {
+  try {
+    console.log(`获取与帖子ID ${postId} 相关的视频，页码: ${pageNum}`)
+
+    // 调用API获取相关视频
+    const response = await apiFetchRelatedVideos(postId, pageNum)
+    return response.list
+  } catch (error) {
+    console.error('获取相关视频失败:', error)
+    return []
+  }
+}
+
+// 加载更多视频 todo ok
+async function loadMoreVideos() {
+  if (isLoading.value || !hasMoreVideos.value || !props.posts) return
+
+  isLoading.value = true
+
+  try {
+    const nextPage = page.value + 1
+    const newVideos = await fetchRelatedVideos(props.posts.id, nextPage)
+
+    if (newVideos.length > 0) {
+      videoPosts.value = [...videoPosts.value, ...newVideos]
+      page.value = nextPage
+    } else {
+      hasMoreVideos.value = false
+    }
+  } catch (error) {
+    console.error('加载更多视频失败:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// 初始化视频列表  todo ok
+async function initVideoPosts() {
+  if (!props.posts) return
+
+  isLoading.value = true
+  videoPosts.value = [props.posts] // 先添加当前视频
+
+  try {
+    const relatedVideos = await fetchRelatedVideos(props.posts.id, 1)
+    videoPosts.value = [...videoPosts.value, ...relatedVideos]
+    page.value = 1
+  } catch (error) {
+    console.error('初始化视频列表失败:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
 // 监听当前索引变化，切换视频
 watch(
-  () => props.currentIndex,
+  () => currentIndex.value,
   () => {
-    if (videoRef.value) {
-      console.log('切换视频:', currentPost.value?.title, '视频URL:', currentPost.value?.video)
+    if (videoRef.value && currentPost.value) {
+      console.log('切换视频:', currentPost.value.title, '视频URL:', currentPost.value.video)
       videoError.value = ''
       nextTick(() => {
         videoRef.value?.load()
       })
+
+      // 更新父组件中的当前帖子信息 ok
+      emit('post-changed', currentPost.value)
+
+      // 当接近列表末尾时，加载更多视频 ok
+      if (currentIndex.value >= videoPosts.value.length - 2 && hasMoreVideos.value) {
+        loadMoreVideos()
+      }
     }
   },
 )
@@ -145,40 +218,51 @@ watch(
   (visible) => {
     if (visible) {
       document.body.style.overflow = 'hidden'
+      // 当播放器显示时，初始化视频列表
+      if (videoPosts.value.length === 0) {
+        initVideoPosts()
+      }
       nextTick(() => {
         videoRef.value?.play()
       })
     } else {
       document.body.style.overflow = ''
       videoRef.value?.pause()
+
+      // 关闭播放器时，将当前视频信息发送回父组件  ok
+      if (currentPost.value) {
+        emit('post-changed', currentPost.value)
+      }
     }
   },
 )
 
+// 组件挂载时初始化 ok
+onMounted(() => {
+  if (props.visible) {
+    initVideoPosts()
+  }
+})
+
 const closePlayer = () => {
   emit('update:visible', false)
 }
-
+// 处理点击遮罩层关闭播放器
 const handleOverlayClick = (e: MouseEvent) => {
   if (e.target === e.currentTarget) {
     closePlayer()
   }
 }
-
+//ok
 const goToPrevious = () => {
   if (hasPrevious.value) {
-    emit('update:currentIndex', props.currentIndex - 1)
+    currentIndex.value--
   }
 }
-
+//ok
 const goToNext = () => {
   if (hasNext.value) {
-    emit('update:currentIndex', props.currentIndex + 1)
-
-    // 当接近列表末尾时，加载更多
-    if (props.currentIndex >= props.posts.length - 3) {
-      emit('load-more')
-    }
+    currentIndex.value++
   }
 }
 
@@ -191,12 +275,13 @@ const handleVideoLoaded = () => {
     })
   }
 }
-
+//ok
 const handleVideoError = (e: Event) => {
   console.error('视频加载错误:', e)
   videoError.value = '视频无法播放，请检查视频链接是否有效'
 }
 
+//ok
 const handleVideoEnded = () => {
   // 视频结束后自动播放下一个
   if (hasNext.value) {
@@ -279,6 +364,35 @@ const handleVideoEnded = () => {
   border-radius: 4px;
   max-width: 80%;
   text-align: center;
+}
+
+.loading-indicator {
+  position: absolute;
+  bottom: 2rem;
+  right: 2rem;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .video-info {

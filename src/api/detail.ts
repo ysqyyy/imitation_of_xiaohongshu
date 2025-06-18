@@ -13,9 +13,11 @@ import type {
 export async function publishPost(postData: {
   title: string
   content: string
-  tags: string[]
-  imgs: string[]
-  private: boolean
+  tags?: string[]
+  imgs?: string[]
+  vieo?: string // 可选的视频URL
+  type?: 'image' | 'video' // 可选的内容类型
+  duration?: number // 可选的视频时长（秒）
 }): Promise<PublishResponse | null> {
   try {
     const res = await request.post<PublishResponse>('/post/publish', postData)
@@ -29,7 +31,7 @@ export async function publishPost(postData: {
   }
 }
 
-//点开帖子
+//点开帖子 ok
 export function goDetail(id: number) {
   router.push({
     path: router.currentRoute.value.path,
@@ -40,7 +42,7 @@ export function goDetail(id: number) {
   })
 }
 
-// 关闭弹窗时移除 detail 参数
+// 关闭弹窗时移除 detail 参数 ok
 export function closeDetail() {
   const query = { ...router.currentRoute.value.query }
   delete query.detail
@@ -50,15 +52,15 @@ export function closeDetail() {
   })
 }
 
-/** 通过ID获取帖子详情
+/** 通过ID获取帖子详情  ok
  * @param id 帖子ID
  * @return PostDetail 帖子详情
  */
 export async function getPostById(id: number): Promise<PostDetail | null> {
   try {
-    // const res = await request.get<PostDetail>(`http://localhost:8888/posts/detail?id=${id}`)
-    // console.log('获取帖子详情请求:', res)
-    const res = await request.get<PostDetail>(`/detail/${id}`)
+    const res = await request.get<PostDetail>(`http://localhost:8888/posts/detail?id=${id}`)
+    console.log('获取帖子详情请求:', res)
+    // const res = await request.get<PostDetail>(`/detail/${id}`)
     if (res.code === 200) {
       console.log('获取帖子详情成功:', res.data)
       return res.data
@@ -100,7 +102,7 @@ export async function sendComment(
   }
 }
 
-/** 点赞帖子
+/** 点赞帖子  ok
  * @param id 帖子ID
  * @return 成功或失败信息
  */
@@ -117,7 +119,7 @@ export async function likePost(id: number): Promise<LikeResponse | null> {
     return null
   }
 }
-/** 取消点赞帖子
+/** 取消点赞帖子  ok
  * @param id 帖子ID
  * @return 成功或失败信息
  */
@@ -141,7 +143,11 @@ export async function unlikePost(id: number): Promise<LikeResponse | null> {
  */
 export async function favoritePost(id: number): Promise<FavoriteResponse | null> {
   try {
-    const res = await request.post<FavoriteResponse>('/detail/fav', { id })
+    console.log('收藏帖子请求ID:', id)
+    const res = await request.post<FavoriteResponse>('http://localhost:8888/userCollects/posts', {
+      id,
+    })
+    console.log('收藏帖子请求:', res)
     if (res.code === 200) {
       return res.data
     }
@@ -152,7 +158,7 @@ export async function favoritePost(id: number): Promise<FavoriteResponse | null>
   }
 }
 
-/** 点赞评论
+/** 点赞评论  ok
  * @param id 评论ID
  * @return 成功或失败信息
  */
@@ -170,7 +176,7 @@ export async function likeComment(id: number): Promise<LikeResponse | null> {
     return null
   }
 }
-/** 取消点赞评论
+/** 取消点赞评论  ok
  * @param id 评论ID
  * @return 成功或失败信息
  */

@@ -281,10 +281,35 @@ export default [
   {
     url: '/api/posts/search',
     method: 'get',
-    response: ({ query }: { query: { keyword?: string } }) => {
+    response: ({
+      query,
+    }: {
+      query: { keyword?: string; page?: number; limit?: number; tag?: string }
+    }) => {
       const keyword = query.keyword || ''
+      const page = Number(query.page) || 1
+      const limit = Number(query.limit) || 9
+      const tag = query.tag
+
+      // 根据关键词和标签过滤帖子
+      let filteredPosts = posts.filter((post) => post.title.includes(keyword))
+
+      // 如果指定了标签，进一步过滤
+      if (tag && tag !== '全部') {
+        filteredPosts = filteredPosts.filter((post) => post.tags?.includes(tag))
+      }
+
+      // 计算总数和分页数据
+      const total = filteredPosts.length
+      const list = filteredPosts.slice((page - 1) * limit, page * limit)
+
       return {
-        data: posts.filter((post) => post.title.includes(keyword)),
+        code: 200,
+        data: {
+          list,
+          total,
+        },
+        message: '搜索帖子成功',
       }
     },
   },
@@ -320,6 +345,92 @@ export default [
           total: posts.length,
         },
         message: '获取推荐帖子成功',
+      }
+    },
+  },
+  {
+    url: '/api/posts/related-videos',
+    method: 'get',
+    response: ({ query }: { query: { postId?: number; page?: number; limit?: number } }) => {
+      const postId = Number(query.postId) || 1
+      const page = Number(query.page) || 1
+      const limit = Number(query.limit) || 5
+
+      // 获取原始帖子的标签，用于筛选相关视频
+      const originalPost = posts.find((p) => p.id === postId)
+      const relatedTags = originalPost?.tags || []
+
+      // 筛选出所有视频类型的帖子
+      const allVideoPosts = posts.filter((p) => p.type === 'video' && p.id !== postId)
+
+      // 根据标签相关性排序（与原帖子共享标签越多越相关）
+      const sortedVideoPosts = allVideoPosts.sort((a, b) => {
+        const tagsMatchA = a.tags?.filter((tag) => relatedTags.includes(tag)).length || 0
+        const tagsMatchB = b.tags?.filter((tag) => relatedTags.includes(tag)).length || 0
+        return tagsMatchB - tagsMatchA // 降序排列
+      })
+
+      // 转换为PostDetail格式
+      const videoDetails = sortedVideoPosts.map((post) => ({
+        id: post.id,
+        title: post.title,
+        content: `这是与帖子#${postId}相关的视频内容：${post.title}`,
+        imgs: [post.img], // 使用PostCard的img作为PostDetail的imgs数组第一项
+        tags: post.tags || [],
+        author: post.author,
+        like: post.like,
+        fav: Math.floor(post.like / 2), // 模拟收藏数据
+        time: new Date().toISOString(),
+        isLike: post.isLike,
+        isFav: Math.random() > 0.5, // 随机设置是否收藏
+        video: post.video,
+        type: 'video',
+        duration: post.duration || 60,
+      }))
+
+      // 如果相关视频不足，生成一些随机视频补充
+      if (videoDetails.length < page * limit + 10) {
+        // 预先生成更多视频，避免频繁生成
+        const baseId = 10000 + videoDetails.length
+        for (let i = 0; i < limit * 3; i++) {
+          // 生成3倍于limit的视频数量
+          const id = baseId + i
+          videoDetails.push({
+            id,
+            title: `相关推荐视频 ${id}`,
+            content: `这是与帖子#${postId}相关的随机推荐视频内容`,
+            imgs: [`https://picsum.photos/seed/${id}/400/300`],
+            tags: [...(relatedTags.length > 0 ? [relatedTags[0]] : []), '推荐', `标签${i % 5}`],
+            author: {
+              id: 100 + i,
+              name: `用户${100 + i}`,
+              img: `https://i.pravatar.cc/150?u=${100 + i}`,
+              isFollowed: Math.random() > 0.5,
+              isAuthor: false,
+            },
+            like: Math.floor(Math.random() * 1000),
+            fav: Math.floor(Math.random() * 500),
+            time: new Date().toISOString(),
+            isLike: Math.random() > 0.5,
+            isFav: Math.random() > 0.5,
+            video: `https://www.w3schools.com/html/mov_bbb.mp4?id=${id}`,
+            type: 'video',
+            duration: 30 + Math.floor(Math.random() * 120),
+          })
+        }
+      }
+
+      // 分页处理
+      const total = videoDetails.length
+      const list = videoDetails.slice((page - 1) * limit, page * limit)
+
+      return {
+        code: 200,
+        data: {
+          list,
+          total,
+        },
+        message: '获取相关视频成功',
       }
     },
   },

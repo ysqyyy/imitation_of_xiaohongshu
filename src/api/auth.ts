@@ -1,7 +1,7 @@
 import request from '@/utils/request'
 import type { LoginRequest, RegisterRequest, RegisterResponse, AuthUserInfo } from '@/types/auth'
-
-// 用户登录
+import auth from '@/utils/auth'
+// 用户登录 ok
 export async function login(data: LoginRequest): Promise<AuthUserInfo> {
   const req = {
     account: data.email,
@@ -10,7 +10,7 @@ export async function login(data: LoginRequest): Promise<AuthUserInfo> {
   try {
     const res = await request.post<AuthUserInfo>('http://localhost:8888/user/login', req)
     console.log('登录响应:', res)
-
+    auth.setToken(res.data.token) // 假设返回的token在data中
     if (res.code !== 200) {
       throw new Error(res.message || '登录失败')
     }
