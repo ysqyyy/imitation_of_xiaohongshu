@@ -27,28 +27,22 @@ export async function getOtherUserInfo(userId: number) {
     throw error
   }
 }
-// 关注用户
-/**
- * @param userId 用户ID
- * @return 成功或失败信息
- */
+// 关注用户 ok
 export async function followUser(userId: number) {
   try {
-    const res = await request.post('/user/follow', { userId })
+    const res = await request.post(`http://localhost:8888/userFollows/follow?userId=${userId}`)
+    console.log('关注用户响应:', res)
     return res
   } catch (error) {
     console.error('Error following user:', error)
     throw error
   }
 }
-// 取消关注用户
-/**
- * @param userId 用户ID
- * @return 成功或失败信息
- */
+// 取消关注用户 ok
 export async function unfollowUser(userId: number) {
   try {
-    const res = await request.delete('/user/follow', { params: { userId } })
+    const res = await request.delete(`http://localhost:8888/userFollows/follow?userId=${userId}`)
+    console.log('取消关注用户响应:', res)
     return res
   } catch (error) {
     console.error('Error unfollowing user:', error)

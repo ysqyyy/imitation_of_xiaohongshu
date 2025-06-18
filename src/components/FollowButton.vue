@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 import { followUser, unfollowUser } from '../api/user'
 
 const props = defineProps<{
@@ -15,12 +15,15 @@ const props = defineProps<{
 
 const isFollowed = ref(props.initialFollowed || false)
 
-// 获取关注状态
-onMounted(() => {
-  if (props.initialFollowed !== undefined) {
-    isFollowed.value = props.initialFollowed
-  }
-})
+watch(
+  () => props.initialFollowed,
+  (newValue) => {
+    if (newValue !== undefined) {
+      isFollowed.value = newValue
+    }
+  },
+  { immediate: true },
+)
 
 // 关注/取消关注用户
 async function toggleFollow() {

@@ -47,7 +47,7 @@ export function fetchRecommendPosts(
     })
 }
 
-//关键词搜索帖子
+//关键词搜索帖子  ok
 /**
  * @param keyword 搜索关键词
  * @param page 页码
@@ -68,16 +68,14 @@ export function fetchPosts(
 ): Promise<SearchPostsResponse> {
   return request
     .get('http://localhost:8888/posts/search', {
-      params: {
-        keyword,
-        page,
-        limit,
-        tag,
-      },
+      keyword,
+      page,
+      limit,
+      tag,
     })
     .then((res) => {
       console.log('搜索API响应:', res)
-      const data = res.data
+      const data = res.data.records
 
       // 如果data已经包含list和total，直接返回
       if (data && typeof data === 'object' && 'list' in data && 'total' in data) {

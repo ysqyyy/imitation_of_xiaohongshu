@@ -11,6 +11,8 @@ export async function login(data: LoginRequest): Promise<AuthUserInfo> {
     const res = await request.post<AuthUserInfo>('http://localhost:8888/user/login', req)
     console.log('登录响应:', res)
     auth.setToken(res.data.token) // 假设返回的token在data中
+    localStorage.setItem('userInfo', JSON.stringify(res.data.user)) // 存储用户信息
+    console.log('用户信息已存储:', res.data.user)
     if (res.code !== 200) {
       throw new Error(res.message || '登录失败')
     }

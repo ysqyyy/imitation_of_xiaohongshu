@@ -112,6 +112,14 @@
                   />
                   <span class="reply" @click="replyComment(comment)">回复</span>
                   <span
+                    v-if="comment.author.id === currentUserId"
+                    class="delete"
+                    :class="{ deleting: isCommentDeleting === comment.id }"
+                    @click="handleDeleteComment(comment.id)"
+                  >
+                    {{ isCommentDeleting === comment.id ? '删除中...' : '删除' }}
+                  </span>
+                  <span
                     v-if="comment.reply && comment.reply.length > 0"
                     class="view-replies"
                     @click="toggleReplies(comment.id)"
@@ -151,6 +159,14 @@
                           :initial-is-liked="reply.isLike"
                         />
                         <span class="reply" @click="replyComment(reply)">回复</span>
+                        <span
+                          v-if="reply.author.id === currentUserId"
+                          class="delete"
+                          :class="{ deleting: isCommentDeleting === reply.id }"
+                          @click="handleDeleteComment(reply.id)"
+                        >
+                          {{ isCommentDeleting === reply.id ? '删除中...' : '删除' }}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -190,8 +206,15 @@
             </div>
 
             <div class="action-btn">
-              <i class="icon fav-icon" @click="sendFav(post?.id)"></i>
-              <span>收藏</span>
+              <i
+                class="icon fav-icon"
+                :class="{
+                  active: post?.isFav,
+                  loading: isFavoriteLoading,
+                }"
+                @click="toggleFavorite(post?.id)"
+              ></i>
+              <span>{{ post?.isFav ? '已收藏' : '收藏' }} {{ post?.fav || 0 }}</span>
             </div>
             <div class="action-btn">
               <i class="icon comment-icon" @click="replyPost()"></i>
@@ -222,7 +245,15 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, onUnmounted } from 'vue'
 import type { PostDetail, Comment } from '../types'
-import { closeDetail, getPostById, sendComment, favoritePost, deletePost } from '../api/detail'
+import {
+  closeDetail,
+  getPostById,
+  sendComment,
+  favoritePost,
+  unfavoritePost,
+  deletePost,
+  deleteComment,
+} from '../api/detail'
 import FollowButton from '../components/FollowButton.vue'
 import LikeButton from '../components/LikeButton.vue'
 import VideoPlayer from '../components/VideoPlayer.vue'
@@ -241,6 +272,9 @@ const showPublish = ref(false) // 控制编辑弹窗的显示
 const showVideoPlayer = ref(false) // 控制视频播放器显示
 const currentVideoIndex = ref(0) // 当前播放的视频索引
 const videoError = ref<string>('') // 视频错误信息
+const isFavoriteLoading = ref(false) // 收藏操作加载状态
+const currentUserId = ref<number | null>(null) // 当前登录用户ID
+const isCommentDeleting = ref<number | null>(null) // 正在删除的评论ID
 
 // 视频错误处理
 function handleVideoError(e: Event) {
@@ -374,7 +408,61 @@ function nextImage() {
   }
 }
 
+// 删除评论
+async function handleDeleteComment(commentId: number) {
+  if (!commentId || isCommentDeleting.value) return
+
+  if (!confirm('确定要删除这条评论吗？')) return
+
+  isCommentDeleting.value = commentId
+
+  try {
+    const result = await deleteComment(commentId)
+    if (result) {
+      // 删除成功，更新评论列表
+      if (post.value && post.value.comments) {
+        // 查找并删除评论
+        post.value.comments = post.value.comments.filter((comment) => {
+          // 过滤主评论
+          if (comment.id === commentId) return false
+
+          // 过滤回复评论
+          if (comment.reply) {
+            comment.reply = comment.reply.filter((reply) => reply.id !== commentId)
+          }
+
+          return true
+        })
+
+        // 更新评论计数
+        commentCount.value = post.value.comments.length
+      }
+    } else {
+      alert('删除评论失败')
+    }
+  } catch (error) {
+    console.error('删除评论失败:', error)
+    alert('删除评论失败，请稍后重试')
+  } finally {
+    isCommentDeleting.value = null
+  }
+}
+
 onMounted(async () => {
+  // 从localStorage获取当前用户信息
+  try {
+    const userInfoStr = localStorage.getItem('userInfo')
+    if (userInfoStr) {
+      const userInfo = JSON.parse(userInfoStr)
+      currentUserId.value = userInfo.userId ? Number(userInfo.userId) : null
+      console.log('当前用户ID:', currentUserId.value)
+    } else {
+      console.log('未找到用户信息')
+    }
+  } catch (error) {
+    console.error('解析用户信息失败:', error)
+  }
+
   if (props.id) {
     const result = await getPostById(Number(props.id))
     if (result) {
@@ -420,20 +508,38 @@ watch(
 )
 
 // 收藏帖子
-async function sendFav(id?: number) {
-  if (!id || !post.value) return
+async function toggleFavorite(id?: number) {
+  if (!id || !post.value || isFavoriteLoading.value) return
+
+  isFavoriteLoading.value = true
+  const isCurrentlyFavorited = post.value.isFav
+  const originalFavCount = post.value.fav
+
+  // 乐观更新 UI
+  if (post.value) {
+    post.value.isFav = !isCurrentlyFavorited
+    post.value.fav += isCurrentlyFavorited ? -1 : 1
+  }
+
   try {
-    const result = await favoritePost(id)
-    if (result && post.value) {
-      post.value.isFav = result.isFav
-    }
+    // 根据当前状态选择 API
+    const result = isCurrentlyFavorited ? await unfavoritePost(id) : await favoritePost(id)
+    console.log('收藏操作结果:', result)
+    // 显示成功提示
+    // alert(isCurrentlyFavorited ? '取消收藏成功' : '收藏成功')
   } catch (error) {
     console.error('收藏操作失败:', error)
-    // 失败时回滚本地状态
+
+    // 失败时回滚到原始状态
     if (post.value) {
-      post.value.isFav = !post.value.isFav
-      post.value.fav += post.value.isFav ? 1 : -1
+      post.value.isFav = isCurrentlyFavorited
+      post.value.fav = originalFavCount
     }
+
+    // 显示错误提示
+    // alert(isCurrentlyFavorited ? '取消收藏失败' : '收藏失败')
+  } finally {
+    isFavoriteLoading.value = false
   }
 }
 //回复帖子
@@ -995,6 +1101,15 @@ footer {
 }
 .fav-icon {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23666'%3E%3Cpath d='M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z'/%3E%3C/svg%3E");
+  transition: transform 0.2s ease;
+}
+
+.fav-icon:hover {
+  transform: scale(1.1);
+}
+
+.fav-icon.active {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff2d55'%3E%3Cpath d='M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z'/%3E%3C/svg%3E");
 }
 .comment-icon {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23666'%3E%3Cpath d='M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18zM18 14H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z'/%3E%3C/svg%3E");
@@ -1023,6 +1138,43 @@ footer {
 .close-btn:hover {
   background: #fff;
   color: #ff2d55;
+}
+
+/* 收藏按钮加载动画 */
+.fav-icon.loading {
+  opacity: 0.7;
+  pointer-events: none;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* 删除按钮样式 */
+.delete {
+  color: #ff4d4f;
+  margin-left: 15px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.delete:hover {
+  opacity: 0.8;
+}
+
+.delete.deleting {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* 响应式样式 */
