@@ -404,19 +404,12 @@ async function submitPost() {
 
   publishing.value = true
   try {
-    // 创建 FormData 对象
     const formData = new FormData()
-
-    // 添加基本信息
     formData.append('title', postData.value.title)
     formData.append('content', postData.value.content)
-
-    // 添加标签
     if (postData.value.tags && postData.value.tags.length > 0) {
       formData.append('tags', JSON.stringify(postData.value.tags))
     }
-
-    // 添加私密设置
     formData.append('isPrivate', String(postData.value.private))
 
     // 如果是编辑模式，添加帖子ID
@@ -429,7 +422,6 @@ async function submitPost() {
       // 图片类型
       formData.append('type', 'image')
 
-      // 添加图片文件
       for (let i = 0; i < imageFiles.value.length; i++) {
         formData.append('images', imageFiles.value[i])
       }
@@ -481,11 +473,12 @@ export default {}
   top: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.65);
+  background: rgba(0, 0, 0, 0.7); /* 更深的背景色提高对比度 */
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  backdrop-filter: blur(3px); /* 添加模糊效果，更现代的UI风格 */
 }
 
 .publish-container {
@@ -494,10 +487,22 @@ export default {}
   max-width: 1200px;
   height: 85vh;
   background: #fff;
-  border-radius: 16px;
+  border-radius: 20px; /* 增加圆角 */
   overflow: hidden;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25); /* 更深的阴影增加立体感 */
   position: relative;
+  animation: fade-in 0.3s ease-out; /* 添加淡入动画 */
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* 左侧图片区域 */
@@ -505,9 +510,10 @@ export default {}
   flex: 1;
   height: 100%;
   min-width: 45%;
-  background: #f8f8f8;
+  background: linear-gradient(to bottom, #f8f8f8, #f0f0f0); /* 渐变背景 */
   display: flex;
   flex-direction: column;
+  border-right: 1px solid #eee;
 }
 
 .main-image-container {
@@ -522,6 +528,13 @@ export default {}
   max-width: 100%;
   max-height: calc(100% - 80px);
   object-fit: contain;
+  border-radius: 8px; /* 图片添加圆角 */
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); /* 轻微阴影 */
+  transition: transform 0.3s ease; /* 平滑过渡 */
+}
+
+.main-image:hover {
+  transform: scale(1.02); /* 悬停时微小放大效果 */
 }
 
 .upload-placeholder {
@@ -533,37 +546,53 @@ export default {}
   height: 100%;
   color: #aaa;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s;
+  border: 2px dashed #ddd; /* 虚线边框 */
+  border-radius: 12px;
+  margin: 20px;
 }
 
 .upload-placeholder:hover {
-  background: #f0f0f0;
+  background: #f3f3f3;
   color: #ff2d55;
+  border-color: #ff2d55;
 }
 
 .upload-icon {
-  font-size: 48px;
-  margin-bottom: 10px;
+  font-size: 52px; /* 更大的图标 */
+  margin-bottom: 15px;
+  opacity: 0.8;
 }
 
 .thumbnails {
-  height: 80px;
+  height: 90px; /* 略微增加高度 */
   display: flex;
   background: rgba(0, 0, 0, 0.03);
-  padding: 10px;
-  gap: 8px;
+  padding: 12px;
+  gap: 10px;
   overflow-x: auto;
+  border-top: 1px solid #eee;
+}
+
+.thumbnails::-webkit-scrollbar {
+  height: 4px;
+}
+
+.thumbnails::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
 }
 
 .thumbnail {
   position: relative;
-  height: 60px;
-  width: 60px;
-  border-radius: 4px;
+  height: 65px;
+  width: 65px;
+  border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
   opacity: 0.7;
-  transition: all 0.2s;
+  transition: all 0.3s;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .thumbnail-img {
@@ -575,41 +604,52 @@ export default {}
 .thumbnail.active {
   opacity: 1;
   border: 2px solid #ff2d55;
+  transform: translateY(-3px); /* 当前选中略微上浮 */
 }
 
 .remove-img {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: 2px;
+  right: 2px;
   width: 20px;
   height: 20px;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 14px;
   cursor: pointer;
+  border-radius: 50%;
+  opacity: 0; /* 默认隐藏 */
+  transition: opacity 0.2s;
+}
+
+.thumbnail:hover .remove-img {
+  opacity: 1; /* 悬停时显示 */
 }
 
 .add-more {
-  height: 60px;
-  width: 60px;
+  height: 65px;
+  width: 65px;
   background: #f0f0f0;
-  border-radius: 4px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: all 0.3s;
+  border: 1px dashed #ddd;
 }
 
 .plus-icon {
-  font-size: 24px;
+  font-size: 28px;
   color: #aaa;
 }
 
 .add-more:hover {
-  background: #e0e0e0;
+  background: #e8e8e8;
+  transform: translateY(-3px);
 }
 
 .add-more:hover .plus-icon {
@@ -619,18 +659,20 @@ export default {}
 /* 上传类型选择器 */
 .upload-type-selector {
   display: flex;
-  padding: 10px;
-  background: #f8f8f8;
+  padding: 15px;
+  background: #fff;
   border-bottom: 1px solid #eee;
+  gap: 10px;
 }
 
 .type-btn {
   flex: 1;
-  padding: 8px 0;
+  padding: 10px 0;
   background: transparent;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   font-size: 16px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.3s;
 }
@@ -638,7 +680,7 @@ export default {}
 .type-btn.active {
   background: #ff2d55;
   color: white;
-  font-weight: 500;
+  box-shadow: 0 4px 10px rgba(255, 45, 85, 0.3);
 }
 
 .type-btn:not(.active):hover {
@@ -654,6 +696,7 @@ export default {}
   position: relative;
   background: #f8f8f8;
   overflow: hidden;
+  padding: 20px;
 }
 
 /* 视频容器 */
@@ -664,28 +707,35 @@ export default {}
   align-items: center;
   justify-content: center;
   position: relative;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .main-video {
   max-width: 100%;
   max-height: 100%;
   display: block;
+  border-radius: 8px;
 }
 
 .remove-video {
   position: absolute;
   bottom: 20px;
   right: 20px;
-  padding: 6px 12px;
+  padding: 8px 16px;
   background: rgba(0, 0, 0, 0.7);
   color: white;
-  border-radius: 4px;
+  border-radius: 20px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s;
+  font-weight: 500;
+  font-size: 14px;
+  backdrop-filter: blur(3px);
 }
 
 .remove-video:hover {
-  background: rgba(255, 0, 0, 0.7);
+  background: rgba(255, 45, 85, 0.8);
+  transform: translateY(-2px);
 }
 
 /* 右侧内容区域 */
@@ -695,57 +745,87 @@ export default {}
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  padding: 24px;
+  padding: 30px;
   position: relative;
+  background: linear-gradient(to bottom right, #fff, #fafafa);
+}
+
+.content-container::-webkit-scrollbar {
+  width: 5px;
+}
+
+.content-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
 }
 
 .section-title {
-  font-size: 24px;
-  font-weight: 600;
-  margin-bottom: 24px;
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 30px;
   color: #333;
+  position: relative;
+  display: inline-block;
+}
+
+.section-title::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 40px;
+  height: 3px;
+  background: #ff2d55;
+  border-radius: 3px;
 }
 
 .input-group {
-  margin-bottom: 20px;
+  margin-bottom: 25px;
   position: relative;
 }
 
 .input-group label {
   display: block;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   color: #333;
+  font-size: 15px;
 }
 
 .input-field,
 .textarea-field {
   width: 100%;
-  padding: 12px;
+  padding: 14px;
   border: 1px solid #eee;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 16px;
-  background: #fafbfc;
-  transition: border 0.2s;
+  background: #fff;
+  transition: all 0.3s;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
 }
 
 .textarea-field {
   resize: none;
-  min-height: 150px;
+  min-height: 180px;
+  line-height: 1.5;
 }
 
 .input-field:focus,
 .textarea-field:focus {
   border-color: #ff2d55;
   outline: none;
+  box-shadow: 0 3px 10px rgba(255, 45, 85, 0.1);
 }
 
 .char-count {
   position: absolute;
-  right: 8px;
-  bottom: 8px;
+  right: 12px;
+  bottom: 12px;
   font-size: 12px;
   color: #aaa;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 2px 6px;
+  border-radius: 10px;
 }
 
 .tag {
@@ -753,59 +833,86 @@ export default {}
   align-items: center;
   background: #f0f0f0;
   color: #666;
-  padding: 4px 10px;
-  border-radius: 16px;
+  padding: 6px 12px;
+  border-radius: 20px;
   font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s;
+}
+
+.tag:hover {
+  transform: translateY(-2px);
 }
 
 .remove-tag {
-  margin-left: 6px;
+  margin-left: 8px;
   cursor: pointer;
   font-size: 16px;
+  opacity: 0.7;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
 }
 
 .remove-tag:hover {
+  opacity: 1;
   color: #ff2d55;
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .hint-text {
   font-size: 12px;
-  color: #aaa;
-  margin-top: 4px;
+  color: #999;
+  margin-top: 6px;
+  font-style: italic;
 }
 
 .privacy-setting {
   display: flex;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 30px;
+  background: #f9f9f9;
+  padding: 15px;
+  border-radius: 12px;
+  border: 1px solid #eee;
 }
 
 .privacy-setting label {
   display: flex;
   align-items: center;
   cursor: pointer;
+  font-weight: 500;
+  color: #555;
 }
 
 .privacy-setting input {
-  margin-right: 8px;
+  margin-right: 10px;
+  transform: scale(1.2);
+  accent-color: #ff2d55;
 }
 
 .action-buttons {
   display: flex;
   justify-content: flex-end;
-  gap: 16px;
+  gap: 20px;
   margin-top: auto;
-  padding-top: 20px;
+  padding-top: 25px;
 }
 
 .cancel-btn,
 .publish-btn {
-  padding: 10px 24px;
-  border-radius: 8px;
+  padding: 12px 30px;
+  border-radius: 25px;
   font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
   border: none;
-  transition: all 0.2s;
+  transition: all 0.3s;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .cancel-btn {
@@ -815,31 +922,37 @@ export default {}
 
 .cancel-btn:hover {
   background: #e0e0e0;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
 }
 
 .publish-btn {
   background: #ff2d55;
   color: white;
+  min-width: 120px;
 }
 
 .publish-btn:hover:not(:disabled) {
   background: #ff1744;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(255, 45, 85, 0.3);
 }
 
 .publish-btn:disabled {
   background: #ffb2c2;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 /* 关闭按钮 */
 .close-btn {
   position: absolute;
-  right: 16px;
-  top: 16px;
-  background: rgba(255, 255, 255, 0.8);
+  right: 20px;
+  top: 20px;
+  background: rgba(255, 255, 255, 0.9);
   border: none;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   font-size: 24px;
   line-height: 1;
@@ -849,64 +962,87 @@ export default {}
   align-items: center;
   justify-content: center;
   z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s;
 }
 
 .close-btn:hover {
   background: #fff;
   color: #ff2d55;
+  transform: rotate(90deg);
 }
 
 /* 标签选择器样式 */
 .tags-selector {
   border: 1px solid #eee;
-  border-radius: 8px;
-  padding: 12px;
-  background: #fafbfc;
+  border-radius: 12px;
+  padding: 16px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
 }
 
 .selected-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 10px;
-  min-height: 30px;
+  gap: 10px;
+  margin-bottom: 15px;
+  min-height: 40px;
+  padding: 5px;
 }
 
 .selected-tags .tag {
   display: flex;
   align-items: center;
-  background: #ff2d55;
+  background: linear-gradient(45deg, #ff2d55, #ff5983);
   color: white;
-  padding: 4px 10px;
-  border-radius: 16px;
+  padding: 6px 15px;
+  border-radius: 20px;
   font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 3px 10px rgba(255, 45, 85, 0.2);
+  animation: tag-appear 0.3s ease-out;
+}
+
+@keyframes tag-appear {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .tag-options {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 10px;
+  margin-top: 15px;
   border-top: 1px solid #eee;
-  padding-top: 10px;
+  padding-top: 15px;
 }
 
 .tag-option {
   background: #f0f0f0;
   color: #666;
-  padding: 4px 10px;
-  border-radius: 16px;
+  padding: 6px 15px;
+  border-radius: 20px;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s;
+  font-weight: 500;
 }
 
 .tag-option:hover {
   background: #e0e0e0;
+  transform: translateY(-3px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
 }
 
 .tag-option.selected {
-  background: #ff2d55;
+  background: linear-gradient(45deg, #ff2d55, #ff5983);
   color: white;
+  box-shadow: 0 3px 10px rgba(255, 45, 85, 0.2);
 }
 </style>

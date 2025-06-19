@@ -5,7 +5,32 @@
         <img class="avatar" :src="user.img || defaultAvatar" alt="头像" />
         <div class="user-info">
           <div class="name-action">
-            <h2>{{ user.name }}</h2>
+            <div class="name-with-gender">
+              <h2>{{ user.name }}</h2>
+              <!-- 性别图标 -->
+              <div class="gender-icon" :class="getGenderClass((user as any).gender)">
+                <svg v-if="(user as any).gender === 1" viewBox="0 0 24 24" width="16" height="16">
+                  <path
+                    d="M9,9C10.29,9 11.5,9.41 12.47,10.11L17.58,5H13V3H21V11H19V6.41L13.89,11.5C14.59,12.5 15,13.7 15,15A6,6 0 0,1 9,21A6,6 0 0,1 3,15A6,6 0 0,1 9,9M9,11A4,4 0 0,0 5,15A4,4 0 0,0 9,19A4,4 0 0,0 13,15A4,4 0 0,0 9,11Z"
+                  />
+                </svg>
+                <svg
+                  v-else-if="(user as any).gender === 2"
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                >
+                  <path
+                    d="M12,4A6,6 0 0,1 18,10C18,12.97 15.84,15.44 13,15.92V18H15V20H13V22H11V20H9V18H11V15.92C8.16,15.44 6,12.97 6,10A6,6 0 0,1 12,4M12,6A4,4 0 0,0 8,10A4,4 0 0,0 12,14A4,4 0 0,0 16,10A4,4 0 0,0 12,6Z"
+                  />
+                </svg>
+                <svg v-else viewBox="0 0 24 24" width="16" height="16">
+                  <path
+                    d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,10.5A1.5,1.5 0 0,1 13.5,12A1.5,1.5 0 0,1 12,13.5A1.5,1.5 0 0,1 10.5,12A1.5,1.5 0 0,1 12,10.5"
+                  />
+                </svg>
+              </div>
+            </div>
             <div class="user-actions">
               <button class="edit-btn" @click="openEditModal">编辑资料</button>
               <button class="password-btn" @click="openPasswordModal">修改密码</button>
@@ -338,6 +363,13 @@ async function savePassword() {
     alert('修改密码失败，请检查当前密码是否正确')
   }
 }
+
+// 获取性别对应的CSS类名
+function getGenderClass(gender: number | undefined | null) {
+  if (gender === 1) return 'male'
+  if (gender === 2) return 'female'
+  return 'unknown'
+}
 </script>
 
 <style scoped>
@@ -381,8 +413,18 @@ main {
 .name-action {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 0.5rem;
+}
+
+.name-action h2 {
+  margin-right: 6px;
+  display: flex;
+  align-items: center;
+}
+
+.name-with-gender {
+  display: flex;
+  align-items: center;
+  margin-right: 12px;
 }
 
 .user-id {
@@ -617,6 +659,32 @@ main {
   margin-bottom: 1.5rem;
   font-size: 1.3rem;
   color: #333;
+}
+
+/* 性别图标样式 */
+.gender-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.gender-icon.male {
+  background-color: #409eff;
+}
+
+.gender-icon.female {
+  background-color: #ff66aa;
+}
+
+.gender-icon.unknown {
+  background-color: #909399;
 }
 
 /* 响应式布局 */

@@ -55,7 +55,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { RouterLink, RouterView, useRouter, useRoute } from 'vue-router'
 import * as DetailView from './views/DetailView.vue'
 import * as PublishView from './views/PublishView.vue'
@@ -79,6 +79,14 @@ const defaultAvatar = '/src/assets/logo.svg' // 默认头像
 onMounted(() => {
   checkLoginStatus()
 })
+
+// 监听路由变化，检查登录状态
+watch(
+  () => route.path,
+  () => {
+    checkLoginStatus()
+  },
+)
 
 // 检查登录状态并获取用户信息
 function checkLoginStatus() {

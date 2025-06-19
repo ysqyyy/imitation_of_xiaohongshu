@@ -89,7 +89,7 @@ export function fetchPosts(
         data.map(async (item: any) => {
           // 确保author存在且有img字段
           if (item.author && item.author.img) {
-            console.log('转换作者头像前:', item.author.img)
+            // console.log('转换作者头像前:', item.author.img)
             item.author.img = await getOssImageUrl(item.author.img)
           } else {
             console.warn('帖子作者信息不完整:', item.author)

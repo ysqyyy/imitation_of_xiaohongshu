@@ -107,6 +107,7 @@
 
 <script lang="ts" setup>
 import { ref, reactive, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { login, register } from '../api/auth'
 import type { LoginRequest, RegisterRequest } from '../types/auth'
 import auth from '../utils/auth'
@@ -120,6 +121,7 @@ interface Emits {
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+const router = useRouter() // 初始化路由器
 
 const isLogin = ref(true)
 const loginLoading = ref(false)
@@ -185,6 +187,7 @@ const handleLogin = async () => {
 
     // 刷新页面以更新登录状态
     window.location.reload()
+    router.push('/') // 跳转到用户主页
   } catch (error) {
     console.error('Login error:', error)
     alert('登录失败，请稍后重试')

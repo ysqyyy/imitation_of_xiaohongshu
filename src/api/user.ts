@@ -20,6 +20,7 @@ export async function getUserInfo() {
       likes: res.data?.likedCount,
       myPosts: mypost, // 使用获取的帖子列表
       favPosts: myfavposts, // 使用获取的收藏帖子列表
+      gender: res.data.gender,
     }
     console.log('获取用户信息响应:', user)
     return user
@@ -38,15 +39,15 @@ export async function getOtherUserInfo(userId: number) {
     console.log('获取其他用户信息响应1:', res)
     const user: UserInfo = {
       name: res.data.username,
-      id: res.data.account,
+      id: res.data.email,
       img: res.data.avatar,
       desc: res.data.bio,
       isFollowed: res.data.isFollowed, // 是否已关注
-      follow: res.data?.followCount || 0,
-      fans: res.data?.fanCount || 0,
-      likes: res.data?.likedCount || 0,
+      follow: res.data?.followCount,
+      fans: res.data?.fanCount,
+      likes: res.data?.likedCount,
+      gender: res.data.gender,
     }
-
     console.log('获取其他用户信息:', user)
     return user
   } catch (error) {

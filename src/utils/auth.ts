@@ -29,10 +29,8 @@ export const auth = {
     localStorage.removeItem('userInfo')
     //todo: 调用后端登出接口
     // await logout()
-    // 如果在浏览器环境，可以重定向到登录页
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login'
-    }
+    // 注意：不再执行重定向，由调用方自行处理
+    return true
   },
 
   // 刷新token (如果后端提供了刷新token的接口)
