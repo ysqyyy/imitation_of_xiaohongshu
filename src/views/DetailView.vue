@@ -185,6 +185,7 @@
               v-model="commentText"
               class="comment-input"
               :placeholder="replyTarget ? `回复 @${replyTarget.author.name}` : '说点什么...'"
+              @keyup.enter="submitComment"
             />
             <button class="send-btn" @click="submitComment">发送</button>
           </div>
@@ -467,7 +468,7 @@ onMounted(async () => {
     const result = await getPostById(Number(props.id))
     if (result) {
       post.value = result
-
+      // console.log('获取到帖子2:', post.value.imgs, post.value.content)
       // 如果帖子有视频，预先处理视频相关逻辑
       if (result.video) {
         console.log('帖子包含视频:', result.video)
@@ -559,13 +560,28 @@ function replyComment(comment: Comment) {
   }, 100)
 }
 // 提交评论（评论/帖子）
-function submitComment() {
+async function submitComment() {
   if (!commentText.value.trim()) return
+
+  let result = null
   if (replyTarget.value) {
-    sendComment(replyTarget.value.id, commentText.value, 'comment')
+    result = await sendComment(replyTarget.value.id, commentText.value, 'comment')
     replyTarget.value = null
   } else if (post.value) {
-    sendComment(post.value.id, commentText.value, 'post')
+    result = await sendComment(post.value.id, commentText.value, 'post')
+  }
+
+  // 评论成功后清空输入框
+  commentText.value = ''
+
+  // 评论成功后刷新帖子详情，获取最新评论
+  if (result && post.value) {
+    // 重新获取帖子详情，包括最新评论
+    const updatedPost = await getPostById(post.value.id)
+    if (updatedPost) {
+      post.value = updatedPost
+      console.log('评论成功，已刷新帖子详情')
+    }
   }
 }
 //点击他人头像

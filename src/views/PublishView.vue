@@ -176,6 +176,7 @@ const emit = defineEmits(['close'])
 const fileInput = ref<HTMLInputElement | null>(null)
 const videoInput = ref<HTMLInputElement | null>(null)
 const selectedImages = ref<string[]>([])
+const imageFiles = ref<File[]>([]) // 存储实际的图片文件对象
 const currentImgIndex = ref(0)
 
 // 视频上传相关
@@ -280,13 +281,33 @@ function handleImageUpload(event: Event) {
     const remainingSlots = 9 - selectedImages.value.length
     const filesToProcess = Math.min(input.files.length, remainingSlots)
 
+    // 检查图片数量
+    if (input.files.length > remainingSlots) {
+      alert(`一次最多只能上传${remainingSlots}张图片`)
+    }
+
+    // 检查每个文件
     for (let i = 0; i < filesToProcess; i++) {
       const file = input.files[i]
+
+      // 检查文件类型
+      if (!file.type.startsWith('image/')) {
+        alert(`文件 "${file.name}" 不是有效的图片类型`)
+        continue
+      }
+
+      // 检查文件大小 (限制为10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        alert(`图片 "${file.name}" 大小超过10MB，请压缩后再上传`)
+        continue
+      }
+
       const reader = new FileReader()
 
       reader.onload = (e) => {
         if (e.target?.result) {
           selectedImages.value.push(e.target.result as string)
+          imageFiles.value.push(file) // 保存实际的文件对象
         }
       }
 
@@ -297,7 +318,14 @@ function handleImageUpload(event: Event) {
 
 // 移除图片
 function removeImage(index: number) {
+  // 释放对象URL
+  if (selectedImages.value[index]) {
+    URL.revokeObjectURL(selectedImages.value[index])
+  }
+
   selectedImages.value.splice(index, 1)
+  imageFiles.value.splice(index, 1) // 同时删除文件对象
+
   if (currentImgIndex.value >= selectedImages.value.length) {
     currentImgIndex.value = Math.max(0, selectedImages.value.length - 1)
   }
@@ -317,6 +345,12 @@ function handleVideoUpload(event: Event) {
     // 检查文件大小（限制为100MB）
     if (file.size > 100 * 1024 * 1024) {
       alert('视频文件过大，请上传小于100MB的视频')
+      return
+    }
+
+    // 检查文件类型
+    if (!file.type.startsWith('video/')) {
+      alert('请上传有效的视频文件')
       return
     }
 
@@ -357,50 +391,53 @@ async function submitPost() {
 
   publishing.value = true
   try {
-    // 构建基础数据
-    const baseData = {
-      title: postData.value.title,
-      content: postData.value.content,
-      tags: postData.value.tags,
-      private: postData.value.private,
-      imgs: [] as string[], // 默认空数组
+    // 创建 FormData 对象
+    const formData = new FormData()
+
+    // 添加基本信息
+    formData.append('title', postData.value.title)
+    formData.append('content', postData.value.content)
+
+    // 添加标签
+    if (postData.value.tags && postData.value.tags.length > 0) {
+      formData.append('tags', JSON.stringify(postData.value.tags))
+    }
+
+    // 添加私密设置
+    formData.append('isPrivate', String(postData.value.private))
+
+    // 如果是编辑模式，添加帖子ID
+    if (props.editMode && postId.value) {
+      formData.append('id', String(postId.value))
     }
 
     // 根据内容类型添加不同的数据
     if (contentType.value === 'image') {
       // 图片类型
-      baseData.imgs = selectedImages.value
+      formData.append('type', 'image')
 
-      // 添加到API数据中
-      const apiData = {
-        ...baseData,
-        type: 'image' as const,
+      // 添加图片文件
+      for (let i = 0; i < imageFiles.value.length; i++) {
+        formData.append('images', imageFiles.value[i])
       }
 
+      // 发送请求
       if (props.editMode && postId.value) {
-        await apiEditPost(postId.value, apiData)
+        await apiEditPost(postId.value, formData)
       } else {
-        await apiPublishPost(apiData)
+        await apiPublishPost(formData)
       }
     } else {
       // 视频类型
       if (videoFile.value) {
-        // 在实际应用中，这里应该上传视频文件到服务器，并获取URL
-        // 这里简化处理，直接使用本地URL
+        formData.append('type', 'video')
+        formData.append('video', videoFile.value)
 
-        // 添加到API数据中
-        const apiData = {
-          ...baseData,
-          type: 'video' as const,
-          video: videoUrl.value,
-          // 可以添加封面图，这里简化处理
-          imgs: videoUrl.value ? [videoUrl.value] : [],
-        }
-
+        // 发送请求
         if (props.editMode && postId.value) {
-          await apiEditPost(postId.value, apiData)
+          await apiEditPost(postId.value, formData)
         } else {
-          await apiPublishPost(apiData)
+          await apiPublishPost(formData)
         }
       }
     }

@@ -15,6 +15,7 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "ali-oss": "^6.23.0",
     "axios": "^1.9.0",
     "js-cookie": "^3.0.5",
     "pinia": "^3.0.1",
@@ -23,6 +24,7 @@
   },
   "devDependencies": {
     "@tsconfig/node22": "^22.0.1",
+    "@types/ali-oss": "^6.16.11",
     "@types/js-cookie": "^3.0.6",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-vue": "^5.2.4",

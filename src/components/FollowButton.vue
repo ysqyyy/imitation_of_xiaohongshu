@@ -20,6 +20,7 @@ watch(
   (newValue) => {
     if (newValue !== undefined) {
       isFollowed.value = newValue
+      console.log('关注状态更新:', isFollowed.value)
     }
   },
   { immediate: true },

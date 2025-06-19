@@ -1,6 +1,7 @@
 import request from '@/utils/request'
 import router from '@/router'
 import type { PostDetail } from '@/types/index'
+import auth from '@/utils/auth'
 import type {
   SuccessResponse,
   CommentResponse,
@@ -8,20 +9,28 @@ import type {
   FavoriteResponse,
   PublishResponse,
 } from '@/types/api'
-
-// 发布帖子
-export async function publishPost(postData: {
-  title: string
-  content: string
-  tags?: string[]
-  imgs?: string[]
-  vieo?: string // 可选的视频URL
-  type?: 'image' | 'video' // 可选的内容类型
-  duration?: number // 可选的视频时长（秒）
-}): Promise<PublishResponse | null> {
+import axios from 'axios'
+import { getOssImageUrl, getOssVideoUrl } from '@/utils/oss'
+// 发布帖子 ok
+export async function publishPost(formData: FormData): Promise<PublishResponse | null> {
   try {
-    const res = await request.post<PublishResponse>('/post/publish', postData)
-    if (res.code === 200) {
+    console.log(
+      '发布帖子请求FormData:',
+      formData.getAll('title'),
+      formData.getAll('content'),
+      formData.getAll('tags'),
+      formData.getAll('images'),
+      formData.getAll('video'),
+      formData.getAll('isPrivate'),
+    )
+    const res = await axios.post('http://localhost:8888/posts/publish', formData, {
+      headers: {
+        Authorization: `Bearer ${auth.getToken()}`,
+        'Content-Type': 'multipart/form-data', // 设置为 multipart/form-data
+      },
+    })
+    console.log('发布帖子请求:', res)
+    if (res.data && res.data.code === 200) {
       return res.data
     }
     return null
@@ -32,24 +41,22 @@ export async function publishPost(postData: {
 }
 
 /**
- * 编辑帖子
+ * 编辑帖子   ok
  * @param id 帖子ID
- * @param postData 帖子数据
+ * @param formData 包含帖子数据的FormData对象
  * @return 成功或失败信息
  */
-export async function editPost(
-  id: number,
-  postData: {
-    title: string
-    content: string
-    tags: string[]
-    imgs: string[]
-    private: boolean
-  },
-): Promise<SuccessResponse | null> {
+export async function editPost(id: number, formData: FormData): Promise<SuccessResponse | null> {
   try {
-    const res = await request.put<SuccessResponse>(`/post/edit/${id}`, postData)
-    if (res.code === 200) {
+    // 使用 axios 直接发送 FormData
+    const res = await axios.put(`http://localhost:8888/posts/update/${id}`, formData, {
+      headers: {
+        Authorization: `Bearer ${auth.getToken()}`,
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+    console.log('编辑帖子请求:', res)
+    if (res.data && res.data.code === 200) {
       return res.data
     }
     return null
@@ -58,14 +65,25 @@ export async function editPost(
     return null
   }
 }
-//通过ID获取帖子详情  ok
+//通过ID获取帖子详情  ok ossok
 export async function getPostById(id: number): Promise<PostDetail | null> {
   try {
     const res = await request.get<PostDetail>(`http://localhost:8888/posts/detail?id=${id}`)
     console.log('获取帖子详情请求:', res)
     // const res = await request.get<PostDetail>(`/detail/${id}`)
+    // const ossImageUrls = res.data.imgs.map(async (img) => await getOssImageUrl(img))
+    if (res.data.imgs && res.data.imgs.length > 0) {
+      const ossImageUrls = await Promise.all(res.data.imgs.map((img) => getOssImageUrl(img)))
+      res.data.imgs = ossImageUrls
+    }
+    if (res.data.video) {
+      //注意这里视频url存在imgs[0]中
+      const ossVideoUrl = res.data.video ? await getOssVideoUrl(res.data.video) : null
+      res.data.video = ossVideoUrl
+    }
+
     if (res.code === 200) {
-      console.log('获取帖子详情成功:', res.data)
+      console.log('处理后的帖子详情:', res.data)
       return res.data
     }
     return null

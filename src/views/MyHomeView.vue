@@ -6,6 +6,10 @@
         <div class="user-info">
           <div class="name-action">
             <h2>{{ user.name }}</h2>
+            <div class="user-actions">
+              <button class="edit-btn" @click="openEditModal">编辑资料</button>
+              <button class="password-btn" @click="openPasswordModal">修改密码</button>
+            </div>
           </div>
           <div class="user-id">小红书号：{{ user.id }}</div>
           <div class="user-desc">{{ user.desc }}</div>
@@ -32,13 +36,102 @@
         <PostList :posts="posts" :emptyText="getEmptyText()" />
       </section>
     </main>
+
+    <!-- 编辑用户信息模态框 -->
+    <div v-if="showEditModal" class="edit-modal-overlay">
+      <div class="edit-modal">
+        <h3>编辑个人资料</h3>
+
+        <!-- 头像上传区域 -->
+        <div class="form-group avatar-upload">
+          <label>头像</label>
+          <div class="avatar-preview-container">
+            <img
+              :src="avatarPreview || user.img || defaultAvatar"
+              alt="头像预览"
+              class="avatar-preview"
+            />
+            <div class="avatar-upload-btn">
+              <input
+                type="file"
+                accept="image/*"
+                @change="handleAvatarChange"
+                ref="avatarInput"
+                class="avatar-input"
+              />
+              <button class="change-avatar-btn" @click="triggerAvatarUpload">更换头像</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>用户名</label>
+          <input v-model="editForm.username" placeholder="请输入用户名" />
+        </div>
+
+        <div class="form-group">
+          <label>个人简介</label>
+          <textarea v-model="editForm.bio" placeholder="请输入个人简介"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>性别</label>
+          <select v-model="editForm.gender">
+            <option :value="1">男</option>
+            <option :value="2">女</option>
+            <option :value="0">保密</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>生日</label>
+          <input type="date" v-model="editForm.birthday" />
+        </div>
+
+        <div class="modal-actions">
+          <button class="cancel-btn" @click="closeEditModal">取消</button>
+          <button class="save-btn" @click="saveUserInfo">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 修改密码模态框 -->
+    <div v-if="showPasswordModal" class="edit-modal-overlay">
+      <div class="edit-modal password-modal">
+        <h3>修改密码</h3>
+
+        <div class="form-group">
+          <label>当前密码</label>
+          <input type="password" v-model="passwordForm.oldPassword" placeholder="请输入当前密码" />
+        </div>
+
+        <div class="form-group">
+          <label>新密码</label>
+          <input type="password" v-model="passwordForm.newPassword" placeholder="请输入新密码" />
+        </div>
+
+        <div class="form-group">
+          <label>确认新密码</label>
+          <input
+            type="password"
+            v-model="passwordForm.confirmPassword"
+            placeholder="请再次输入新密码"
+          />
+        </div>
+
+        <div class="modal-actions">
+          <button class="cancel-btn" @click="closePasswordModal">取消</button>
+          <button class="save-btn" @click="savePassword">确认修改</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, reactive } from 'vue'
 import type { UserInfo, PostCard } from '../types'
-import { getUserInfo } from '../api/user'
+import { getUserInfo, updateUserInfo, updatePassword } from '../api/user'
 import PostList from '../components/PostList.vue'
 
 const defaultAvatar = '/src/assets/logo.svg'
@@ -94,6 +187,156 @@ function getEmptyText() {
   if (activetag.value === 'fav') return '收藏'
   if (activetag.value === 'like') return '点赞'
   return '内容'
+}
+
+// 模态框显示状态
+const showEditModal = ref(false)
+const showPasswordModal = ref(false)
+
+// 编辑表单数据
+const editForm = reactive({
+  username: '',
+  bio: '',
+  gender: 0,
+  birthday: '',
+})
+
+// 密码表单数据
+const passwordForm = reactive({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: '',
+})
+
+// 头像上传相关
+const avatarInput = ref<HTMLInputElement | null>(null)
+const avatarFile = ref<File | null>(null)
+const avatarPreview = ref<string | null>(null)
+
+// 触发文件选择
+function triggerAvatarUpload() {
+  avatarInput.value?.click()
+}
+
+// 处理头像选择变化
+function handleAvatarChange(event: Event) {
+  const target = event.target as HTMLInputElement
+  if (target.files && target.files.length > 0) {
+    const file = target.files[0]
+    avatarFile.value = file
+
+    // 创建预览URL
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      avatarPreview.value = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
+// 打开编辑模态框
+function openEditModal() {
+  // 填充当前用户数据
+  editForm.username = user.value.name
+  editForm.bio = user.value.desc
+  editForm.gender = 0 // 默认值
+  editForm.birthday = '' // 默认值
+  showEditModal.value = true
+}
+
+// 关闭编辑模态框
+function closeEditModal() {
+  showEditModal.value = false
+}
+
+// 打开修改密码模态框
+function openPasswordModal() {
+  // 重置表单
+  passwordForm.oldPassword = ''
+  passwordForm.newPassword = ''
+  passwordForm.confirmPassword = ''
+  showPasswordModal.value = true
+}
+
+// 关闭修改密码模态框
+function closePasswordModal() {
+  showPasswordModal.value = false
+}
+
+// 保存用户信息
+async function saveUserInfo() {
+  try {
+    // 创建FormData对象用于上传文件
+    const formData = new FormData()
+
+    // 添加头像文件（如果有）
+    if (avatarFile.value) {
+      formData.append('avatar', avatarFile.value)
+    }
+
+    // 添加其他用户信息
+    formData.append('username', editForm.username)
+    formData.append('bio', editForm.bio)
+    formData.append('gender', editForm.gender.toString())
+    if (editForm.birthday) {
+      formData.append('birthday', editForm.birthday)
+    }
+
+    // 调用API更新用户信息
+    await updateUserInfo(formData)
+
+    // 更新成功后刷新用户信息
+    const userData = await getUserInfo()
+    userCache = userData
+    user.value = userData
+
+    // 清除头像预览和文件
+    avatarPreview.value = null
+    avatarFile.value = null
+
+    // 关闭模态框
+    closeEditModal()
+
+    // 可以添加一个提示消息
+    alert('个人资料更新成功！')
+  } catch (error) {
+    console.error('更新用户信息失败:', error)
+    alert('更新失败，请稍后再试')
+  }
+}
+
+// 保存新密码
+async function savePassword() {
+  try {
+    // 表单验证
+    if (!passwordForm.oldPassword) {
+      alert('请输入当前密码')
+      return
+    }
+    if (!passwordForm.newPassword) {
+      alert('请输入新密码')
+      return
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      alert('两次输入的新密码不一致')
+      return
+    }
+
+    // 调用API修改密码
+    await updatePassword({
+      oldPassword: passwordForm.oldPassword,
+      newPassword: passwordForm.newPassword,
+    })
+
+    // 关闭模态框
+    closePasswordModal()
+
+    // 显示成功消息
+    alert('密码修改成功！请使用新密码登录')
+  } catch (error) {
+    console.error('修改密码失败:', error)
+    alert('修改密码失败，请检查当前密码是否正确')
+  }
 }
 </script>
 
@@ -190,6 +433,190 @@ main {
 .tag.active {
   color: #ff2d55;
   border-bottom: 2px solid #ff2d55;
+}
+
+/* 用户操作按钮容器 */
+.user-actions {
+  display: flex;
+  gap: 0.8rem;
+}
+
+/* 编辑按钮样式 */
+.edit-btn {
+  background: #ff2d55;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.edit-btn:hover {
+  background: #e62147;
+}
+
+/* 修改密码按钮 */
+.password-btn {
+  background: #f0f0f0;
+  color: #666;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.password-btn:hover {
+  background: #e0e0e0;
+  color: #444;
+}
+
+/* 编辑模态框样式 */
+.edit-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.edit-modal {
+  width: 400px;
+  max-width: 90%;
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.edit-modal h3 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  font-size: 1.3rem;
+  color: #333;
+}
+
+.form-group {
+  margin-bottom: 1.2rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+.form-group textarea {
+  height: 100px;
+  resize: vertical;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.cancel-btn {
+  background: #f0f0f0;
+  color: #666;
+  border: none;
+  padding: 0.7rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.save-btn {
+  background: #ff2d55;
+  color: white;
+  border: none;
+  padding: 0.7rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+/* 头像上传样式 */
+.avatar-upload {
+  margin-bottom: 2rem;
+}
+
+.avatar-preview-container {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.avatar-preview {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #f0f0f0;
+}
+
+.avatar-upload-btn {
+  display: flex;
+  flex-direction: column;
+}
+
+.avatar-input {
+  display: none;
+}
+
+.change-avatar-btn {
+  background: #ff2d55;
+  color: white;
+  border: none;
+  padding: 0.7rem 1.2rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.change-avatar-btn:hover {
+  background: #e62147;
+}
+
+/* 密码修改模态框样式 */
+.password-modal {
+  width: 400px;
+  max-width: 90%;
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.password-modal h3 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  font-size: 1.3rem;
+  color: #333;
 }
 
 /* 响应式布局 */

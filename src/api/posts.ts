@@ -1,16 +1,16 @@
 import request from '@/utils/request'
 import type { PostCard, PostDetail } from '@/types'
-
+import { getOssImageUrl } from '@/utils/oss'
 // 获取推荐帖子响应类型
 export interface RecommendPostsResponse {
   list: PostCard[]
   total: number
 }
 
-// 获取推荐帖子
+// 获取推荐帖子  ok无数据待改oss
 /**
  * @param page 页码
- * @param limit 每页数量
+ * @param limit 每页数量 size
  * @return Promise<{ list: PostCard[], total: number }> 分页帖子数据
  */
 export function fetchRecommendPosts(
@@ -18,10 +18,10 @@ export function fetchRecommendPosts(
   limit: number = 10,
 ): Promise<RecommendPostsResponse> {
   return request
-    .get('/posts/recommend', { params: { page, limit } })
+    .get('http://localhost:8888/posts/recommend', { page, limit })
     .then((res) => {
       // mock返回的数据结构包含code、data、message等字段
-      console.log('API响应:', res)
+      console.log('推荐API响应:', res)
       const data = res.data
 
       // 如果data已经包含list和total，直接返回
@@ -73,9 +73,16 @@ export function fetchPosts(
       limit,
       tag,
     })
-    .then((res) => {
+    .then(async (res) => {
       console.log('搜索API响应:', res)
       const data = res.data.records
+      //转换oss图片地址 ok
+      await Promise.all(
+        data.map(async (item: any) => {
+          item.img = await getOssImageUrl(item.img)
+          // 如有多个字段需要异步赋值，也可以在这里加
+        }),
+      )
 
       // 如果data已经包含list和total，直接返回
       if (data && typeof data === 'object' && 'list' in data && 'total' in data) {
