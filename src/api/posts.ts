@@ -83,6 +83,19 @@ export function fetchPosts(
           // 如有多个字段需要异步赋值，也可以在这里加
         }),
       )
+      console.log('转换后的帖子数据:', data)
+      //转换oss图片地址 ok
+      await Promise.all(
+        data.map(async (item: any) => {
+          // 确保author存在且有img字段
+          if (item.author && item.author.img) {
+            console.log('转换作者头像前:', item.author.img)
+            item.author.img = await getOssImageUrl(item.author.img)
+          } else {
+            console.warn('帖子作者信息不完整:', item.author)
+          }
+        }),
+      )
 
       // 如果data已经包含list和total，直接返回
       if (data && typeof data === 'object' && 'list' in data && 'total' in data) {

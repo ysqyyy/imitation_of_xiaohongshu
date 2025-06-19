@@ -172,11 +172,19 @@ const handleLogin = async () => {
     const result = await login(loginForm)
     // 登录成功，保存用户信息到localStorage或状态管理
     auth.setToken(result.token, 7) // 保存7天
-    localStorage.setItem('userInfo', JSON.stringify(result.user))
-    // console.log('user:', result.user)
+
+    // 确保存储头像和用户名
+    const userInfo = {
+      ...result.user,
+      username: (result.user as any).username || (result.user as any).name,
+      avatar: (result.user as any).avatar || (result.user as any).img,
+    }
+    localStorage.setItem('userInfo', JSON.stringify(userInfo))
+
     closeModal()
-    // 可以在这里触发全局状态更新
-    alert('登录成功！')
+
+    // 刷新页面以更新登录状态
+    window.location.reload()
   } catch (error) {
     console.error('Login error:', error)
     alert('登录失败，请稍后重试')

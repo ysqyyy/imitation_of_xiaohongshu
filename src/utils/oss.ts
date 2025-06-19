@@ -22,20 +22,9 @@ export function initOssClient() {
 
 export async function getOssImageUrl(objectKey: string, expires = 3600) {
   try {
-    const client = initOssClient()
-    const url = client.signatureUrl(objectKey, {
-      expires, // 1小时有效期
-      method: 'GET',
-      // 添加 response 参数，设置 Content-Disposition 为 inline
-      // 这会告诉浏览器直接在页面中显示图片，而不是下载它
-      response: {
-        'content-disposition': 'inline',
-        // 你可以根据实际图片类型设置 content-type
-        // 'content-type': 'image/png',
-      },
-    })
-    // console.log('获取OSS图片URL:', url)
-    return url
+    // 使用批量获取函数，但只传入一个URL
+    const urls = await getOssImageUrls([objectKey], expires)
+    return urls[0] // 返回数组中的第一个URL
   } catch (error) {
     console.error('获取OSS图片URL失败:', error)
     throw error
@@ -50,21 +39,75 @@ export async function getOssImageUrl(objectKey: string, expires = 3600) {
  */
 export async function getOssVideoUrl(objectKey: string, expires = 3600) {
   try {
-    const client = initOssClient()
-    // console.log('获取OSS视频URL:', objectKey)
-    const url = client.signatureUrl(objectKey, {
-      expires, // 1小时有效期
-      method: 'GET',
-      // 视频文件也设置为 inline 显示
-      response: {
-        'content-disposition': 'inline',
-        // 'content-type': 'video/mp4', // 确保浏览器将内容识别为视频
-      },
-    })
-    console.log('获取OSS视频URL:', url)
-    return url
+    // 使用批量获取函数，但只传入一个URL
+    const urls = await getOssVideoUrls([objectKey], expires)
+    console.log('获取OSS视频URL:', urls[0])
+    return urls[0] // 返回数组中的第一个URL
   } catch (error) {
     console.error('获取OSS视频URL失败:', error)
+    throw error
+  }
+}
+
+/**
+ * 批量获取OSS图片URL
+ * @param objectKeys 图片对象键数组
+ * @param expires URL过期时间（秒）
+ * @returns 签名的图片URL数组
+ */
+export async function getOssImageUrls(objectKeys: string[], expires = 3600) {
+  try {
+    const client = initOssClient()
+
+    // 使用Promise.all并行处理所有URL请求
+    const urls = await Promise.all(
+      objectKeys.map((objectKey) =>
+        client.signatureUrl(objectKey, {
+          expires, // 1小时有效期
+          method: 'GET',
+          // 添加 response 参数，设置 Content-Disposition 为 inline
+          // 这会告诉浏览器直接在页面中显示图片，而不是下载它
+          response: {
+            'content-disposition': 'inline',
+          },
+        }),
+      ),
+    )
+
+    return urls
+  } catch (error) {
+    console.error('批量获取OSS图片URL失败:', error)
+    throw error
+  }
+}
+
+/**
+ * 批量获取 OSS 视频 URL
+ * @param objectKeys 视频对象键数组
+ * @param expires URL 过期时间（秒）
+ * @returns 签名的视频 URL 数组
+ */
+export async function getOssVideoUrls(objectKeys: string[], expires = 3600) {
+  try {
+    const client = initOssClient()
+
+    // 使用Promise.all并行处理所有URL请求
+    const urls = await Promise.all(
+      objectKeys.map((objectKey) =>
+        client.signatureUrl(objectKey, {
+          expires, // 1小时有效期
+          method: 'GET',
+          // 视频文件也设置为 inline 显示
+          response: {
+            'content-disposition': 'inline',
+          },
+        }),
+      ),
+    )
+
+    return urls
+  } catch (error) {
+    console.error('批量获取OSS视频URL失败:', error)
     throw error
   }
 }

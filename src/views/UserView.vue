@@ -39,13 +39,14 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import type { UserInfo, PostCard } from '../types'
 import { getOtherUserInfo } from '../api/user'
 import PostList from '../components/PostList.vue'
 import FollowButton from '../components/FollowButton.vue'
 
 const route = useRoute()
+const router = useRouter()
 const userId = computed(() => route.params.id as string)
 const defaultAvatar =
   'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop'
@@ -70,8 +71,32 @@ const tags = ref([{ label: 'TA的笔记', key: 'note' }])
 const activetag = ref('note')
 const posts = ref<PostCard[]>([])
 
+// 检查当前用户是否为登录用户
+function checkIfCurrentUser() {
+  const userInfoStr = localStorage.getItem('userInfo')
+  if (userInfoStr) {
+    try {
+      const userInfo = JSON.parse(userInfoStr)
+      console.log('当前用户信息:', userInfo)
+      if (userInfo.userId && userInfo.userId.toString() === userId.value) {
+        // 如果是当前登录用户，跳转到我的主页
+        router.push('/myhome')
+        return true
+      }
+    } catch (e) {
+      console.error('解析用户信息失败', e)
+    }
+  }
+  return false
+}
+
 // 获取用户信息
 onMounted(async () => {
+  // 检查是否为当前登录用户，如果是则跳转到我的主页
+  if (checkIfCurrentUser()) {
+    return
+  }
+
   try {
     const userData = await getOtherUserInfo(Number(userId.value))
     user.value = {

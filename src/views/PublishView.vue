@@ -117,23 +117,32 @@
           <div class="char-count">{{ postData.content.length }}/1000</div>
         </div>
 
-        <!-- 标签输入 -->
+        <!-- 标签选择 -->
         <div class="input-group">
           <label for="tags">标签</label>
-          <div class="tags-container">
-            <div v-for="(tag, index) in postData.tags" :key="index" class="tag">
-              # {{ tag }}
-              <span class="remove-tag" @click="removeTag(index)">×</span>
+          <div class="tags-selector">
+            <!-- 已选择的标签 -->
+            <div class="selected-tags">
+              <div v-for="(tag, index) in postData.tags" :key="index" class="tag">
+                # {{ tag }}
+                <span class="remove-tag" @click="removeTag(index)">×</span>
+              </div>
             </div>
-            <input
-              v-if="postData.tags.length < 5"
-              v-model="newTag"
-              class="tag-input"
-              placeholder="添加标签..."
-              @keyup.enter="addTag"
-            />
+
+            <!-- 标签选择列表 -->
+            <div class="tag-options">
+              <div
+                v-for="tag in availableTags"
+                :key="tag"
+                class="tag-option"
+                :class="{ selected: postData.tags.includes(tag) }"
+                @click="toggleTag(tag)"
+              >
+                # {{ tag }}
+              </div>
+            </div>
           </div>
-          <div class="hint-text">最多添加5个标签，按回车确认</div>
+          <div class="hint-text">最多选择5个标签</div>
         </div>
 
         <!-- 隐私设置 -->
@@ -195,8 +204,8 @@ const postData = ref({
   private: false,
 })
 
-// 标签输入
-const newTag = ref('')
+// 定义可用的标签列表
+const availableTags = ref(['美食', '旅行', '穿搭', '数码', '学习', '娱乐', '生活'])
 
 // 发布状态
 const publishing = ref(false)
@@ -371,12 +380,16 @@ function removeVideo() {
   videoUrl.value = ''
 }
 
-// 添加标签
-function addTag() {
-  const tag = newTag.value.trim()
-  if (tag && !postData.value.tags.includes(tag) && postData.value.tags.length < 5) {
+// 切换标签选择状态
+function toggleTag(tag: string) {
+  // 如果标签已经被选中，则移除
+  if (postData.value.tags.includes(tag)) {
+    const index = postData.value.tags.indexOf(tag)
+    removeTag(index)
+  }
+  // 如果标签未被选中且未达到上限，则添加
+  else if (postData.value.tags.length < 5) {
     postData.value.tags.push(tag)
-    newTag.value = ''
   }
 }
 
@@ -735,17 +748,6 @@ export default {}
   color: #aaa;
 }
 
-.tags-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 8px;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  min-height: 46px;
-  background: #fafbfc;
-}
-
 .tag {
   display: flex;
   align-items: center;
@@ -754,16 +756,6 @@ export default {}
   padding: 4px 10px;
   border-radius: 16px;
   font-size: 14px;
-}
-
-.tag-input {
-  flex: 1;
-  min-width: 100px;
-  border: none;
-  background: transparent;
-  padding: 4px;
-  font-size: 14px;
-  outline: none;
 }
 
 .remove-tag {
@@ -862,5 +854,59 @@ export default {}
 .close-btn:hover {
   background: #fff;
   color: #ff2d55;
+}
+
+/* 标签选择器样式 */
+.tags-selector {
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fafbfc;
+}
+
+.selected-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+  min-height: 30px;
+}
+
+.selected-tags .tag {
+  display: flex;
+  align-items: center;
+  background: #ff2d55;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 14px;
+}
+
+.tag-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  border-top: 1px solid #eee;
+  padding-top: 10px;
+}
+
+.tag-option {
+  background: #f0f0f0;
+  color: #666;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tag-option:hover {
+  background: #e0e0e0;
+}
+
+.tag-option.selected {
+  background: #ff2d55;
+  color: white;
 }
 </style>

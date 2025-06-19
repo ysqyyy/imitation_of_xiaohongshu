@@ -81,6 +81,31 @@ export async function getPostById(id: number): Promise<PostDetail | null> {
       const ossVideoUrl = res.data.video ? await getOssVideoUrl(res.data.video) : null
       res.data.video = ossVideoUrl
     }
+    //处理作者头像
+    if (res.data.author && res.data.author.img) {
+      const ossAuthorImg = await getOssImageUrl(res.data.author.img)
+      res.data.author.img = ossAuthorImg
+    }
+    //处理评论头像
+    if (res.data.comments && res.data.comments.length > 0) {
+      await Promise.all(
+        res.data.comments.map(async (comment) => {
+          if (comment.author && comment.author.img) {
+            comment.author.img = await getOssImageUrl(comment.author.img)
+          }
+          // 处理二级评论（回复）的头像
+          if (comment.reply && comment.reply.length > 0) {
+            await Promise.all(
+              comment.reply.map(async (replyComment) => {
+                if (replyComment.author && replyComment.author.img) {
+                  replyComment.author.img = await getOssImageUrl(replyComment.author.img)
+                }
+              }),
+            )
+          }
+        }),
+      )
+    }
 
     if (res.code === 200) {
       console.log('处理后的帖子详情:', res.data)

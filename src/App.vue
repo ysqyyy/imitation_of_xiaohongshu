@@ -4,13 +4,29 @@
       <nav class="custom-nav">
         <RouterLink to="/" class="nav-link" active-class="nav-active">推荐</RouterLink>
         <RouterLink to="/search" class="nav-link" active-class="nav-active">查找</RouterLink>
-        <RouterLink to="/myhome" class="nav-link" active-class="nav-active">我的主页</RouterLink>
+        <RouterLink v-if="isLoggedIn" to="/myhome" class="nav-link" active-class="nav-active"
+          >我的主页</RouterLink
+        >
         <div class="nav-bottom">
           <div class="publish-btn" @click="openPublishModal">
             <span class="plus-icon">+</span><span>发布</span>
           </div>
         </div>
-        <button class="login-btn" @click="showLoginModal = true">登录</button>
+
+        <!-- 未登录显示登录按钮，已登录显示用户信息 -->
+        <div v-if="!isLoggedIn" class="auth-section">
+          <button class="login-btn" @click="showLoginModal = true">登录</button>
+        </div>
+        <div v-else class="user-info-section" @click="toggleUserMenu">
+          <img :src="userAvatar" alt="用户头像" class="user-avatar" />
+          <span class="user-name">{{ userName }}</span>
+
+          <!-- 用户菜单 -->
+          <div v-if="showUserMenu" class="user-menu">
+            <div class="menu-item" @click="goToUserHome">我的主页</div>
+            <div class="menu-item" @click="handleLogout">退出登录</div>
+          </div>
+        </div>
       </nav>
     </aside>
     <main>
@@ -39,17 +55,75 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { RouterLink, RouterView, useRouter, useRoute } from 'vue-router'
 import * as DetailView from './views/DetailView.vue'
 import * as PublishView from './views/PublishView.vue'
 import LoginModal from './components/LoginModal.vue'
+import { auth } from './utils/auth'
 
 const router = useRouter()
 const route = useRoute()
 
 const keyword = ref('')
 const showLoginModal = ref(false)
+
+// 用户信息相关
+const isLoggedIn = ref(false)
+const userName = ref('')
+const userAvatar = ref('')
+const showUserMenu = ref(false)
+const defaultAvatar = '/src/assets/logo.svg' // 默认头像
+
+// 在组件挂载时检查登录状态
+onMounted(() => {
+  checkLoginStatus()
+})
+
+// 检查登录状态并获取用户信息
+function checkLoginStatus() {
+  // 检查是否已登录
+  isLoggedIn.value = auth.isLoggedIn()
+
+  if (isLoggedIn.value) {
+    // 从localStorage获取用户信息
+    try {
+      const userInfoStr = localStorage.getItem('userInfo')
+      if (userInfoStr) {
+        const userInfo = JSON.parse(userInfoStr)
+        userName.value = userInfo.username || '用户'
+        userAvatar.value = userInfo.avatar || defaultAvatar
+      }
+    } catch (error) {
+      console.error('解析用户信息失败:', error)
+      // 如果解析失败，设置默认值
+      userName.value = '用户'
+      userAvatar.value = defaultAvatar
+    }
+  }
+}
+
+// 切换用户菜单显示/隐藏
+function toggleUserMenu() {
+  showUserMenu.value = !showUserMenu.value
+}
+
+// 跳转到用户主页
+function goToUserHome() {
+  router.push('/myhome')
+  showUserMenu.value = false
+}
+
+// 处理登出
+function handleLogout() {
+  auth.logout()
+  isLoggedIn.value = false
+  userName.value = ''
+  userAvatar.value = ''
+  showUserMenu.value = false
+  // 跳转到首页
+  router.push('/')
+}
 
 function onSearch() {
   router.push({ path: '/search', query: { keyword: keyword.value } })
@@ -165,23 +239,84 @@ aside {
 }
 
 .login-btn {
-  width: 80%;
+  width: auto;
   text-align: center;
-  padding: 0.9rem 0;
-  font-size: 1.25rem;
+  padding: 0.6rem 1.5rem;
+  font-size: 1rem;
   color: #fff;
   background: #ff2d55;
   border: none;
-  border-radius: 24px;
+  border-radius: 20px;
   cursor: pointer;
   transition: all 0.2s;
   font-weight: 500;
-  letter-spacing: 1px;
-  box-shadow: 0 2px 8px 0 #ffe6ec;
+  letter-spacing: 2px;
+  box-shadow: 0 2px 8px 0 rgba(255, 45, 85, 0.2);
+  margin-top: 2rem;
 }
+
 .login-btn:hover {
   background: #ff1744;
   box-shadow: 0 4px 12px 0 #ffe6ec;
+}
+
+/* 登录区域样式 */
+.auth-section {
+  margin-top: 2rem;
+}
+
+/* 用户信息区域 */
+.user-info-section {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  cursor: pointer;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #f0f0f0;
+  margin-bottom: 0.5rem;
+}
+
+.user-name {
+  font-size: 0.85rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+  max-width: 80px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+/* 用户菜单 */
+.user-menu {
+  position: absolute;
+  top: 100%;
+  width: 120px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+.menu-item {
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  color: #333;
+  transition: background-color 0.2s;
+}
+
+.menu-item:hover {
+  background-color: #f5f5f5;
 }
 
 main {
