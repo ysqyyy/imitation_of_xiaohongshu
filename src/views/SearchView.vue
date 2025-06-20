@@ -22,23 +22,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchPosts } from '../api/posts'
 import type { PostCard } from '../types'
 import PostList from '../components/PostList.vue'
+const route = useRoute()
 
 // 分类相关变量
 const categories = ['全部', '美食', '旅游', '穿搭', '数码', '学习', '娱乐', '生活']
 const activeCategory = ref(0)
 const keyword = ref('')
-const posts = ref<PostCard[]>([])
 const currentPage = ref(1)
+// const totalPosts = ref(0)
+const posts = ref<PostCard[]>([])
 const isLoading = ref(false)
 const hasMorePosts = ref(true)
-const totalPosts = ref(0)
-// 获取路由参数，实现从App.vue跳转带关键词自动搜索
-const route = useRoute()
 
 // 加载初始帖子
 async function loadInitialPosts() {
@@ -51,10 +50,9 @@ async function loadInitialPosts() {
 
     const result = await fetchPosts(keyword.value, 1, 9, selectedCategory)
     posts.value = result.list
-    totalPosts.value = result.total
+    // totalPosts.value = result.total
     hasMorePosts.value = result.list.length >= 9
-    console.log(hasMorePosts.value, result.list.length, result.total)
-
+    // console.log(hasMorePosts.value, result.list.length, result.total)
     isLoading.value = false
   } catch (error) {
     console.error('加载帖子失败:', error)
@@ -69,9 +67,7 @@ async function loadMorePosts() {
   try {
     isLoading.value = true
     currentPage.value++
-
-    console.log(`加载更多帖子，当前页码: ${currentPage.value}`)
-
+    // console.log(`加载更多帖子，当前页码: ${currentPage.value}`)
     const selectedCategory =
       activeCategory.value !== 0 ? categories[activeCategory.value] : undefined
 
@@ -81,9 +77,9 @@ async function loadMorePosts() {
     if (result.list.length > 0) {
       posts.value = [...posts.value, ...result.list]
     }
-    totalPosts.value += result.total
+    // totalPosts.value += result.total
     // 更新是否还有更多数据
-    hasMorePosts.value = posts.value.length >= 9
+    hasMorePosts.value = result.list.length >= 9
 
     isLoading.value = false
   } catch (error) {
@@ -98,11 +94,8 @@ onMounted(async () => {
   if (route.query.keyword) {
     keyword.value = String(route.query.keyword)
   }
-
-  // 加载初始数据
   await loadInitialPosts()
 })
-
 // 监听路由 keyword 变化，自动刷新数据
 watch(
   () => route.query.keyword,
@@ -113,7 +106,6 @@ watch(
     }
   },
 )
-
 // 选择分类
 function selectCategory(idx: number) {
   if (activeCategory.value !== idx) {

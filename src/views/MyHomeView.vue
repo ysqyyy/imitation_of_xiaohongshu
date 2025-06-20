@@ -1,6 +1,7 @@
 <template>
   <div class="layout">
     <main>
+      <!-- 个人信息区 -->
       <section class="user-section">
         <img class="avatar" :src="user.img || defaultAvatar" alt="头像" />
         <div class="user-info">
@@ -46,6 +47,7 @@
         </div>
       </section>
 
+      <!-- 帖子区域 -->
       <section class="posts-section">
         <div class="tags">
           <span
@@ -158,7 +160,6 @@ import { ref, onMounted, reactive } from 'vue'
 import type { UserInfo, PostCard } from '../types'
 import { getUserInfo, updateUserInfo, updatePassword } from '../api/user'
 import PostList from '../components/PostList.vue'
-
 const defaultAvatar = '/src/assets/logo.svg'
 
 // 用户信息响应式数据
@@ -167,6 +168,8 @@ const user = ref<UserInfo>({
   name: '',
   img: '',
   desc: '',
+  gender: 0,
+  birthday: '',
   follow: 0,
   fans: 0,
   likes: 0,
@@ -261,28 +264,23 @@ function handleAvatarChange(event: Event) {
 
 // 打开编辑模态框
 function openEditModal() {
-  // 填充当前用户数据
   editForm.username = user.value.name
   editForm.bio = user.value.desc
-  editForm.gender = 0 // 默认值
-  editForm.birthday = '' // 默认值
+  editForm.gender = user.value.gender || 0
+  editForm.birthday = user.value.birthday || ''
   showEditModal.value = true
 }
-
 // 关闭编辑模态框
 function closeEditModal() {
   showEditModal.value = false
 }
-
 // 打开修改密码模态框
 function openPasswordModal() {
-  // 重置表单
   passwordForm.oldPassword = ''
   passwordForm.newPassword = ''
   passwordForm.confirmPassword = ''
   showPasswordModal.value = true
 }
-
 // 关闭修改密码模态框
 function closePasswordModal() {
   showPasswordModal.value = false
@@ -291,39 +289,28 @@ function closePasswordModal() {
 // 保存用户信息
 async function saveUserInfo() {
   try {
-    // 创建FormData对象用于上传文件
     const formData = new FormData()
-
-    // 添加头像文件（如果有）
     if (avatarFile.value) {
       formData.append('avatar', avatarFile.value)
     }
-
-    // 添加其他用户信息
     formData.append('username', editForm.username)
     formData.append('bio', editForm.bio)
     formData.append('gender', editForm.gender.toString())
     if (editForm.birthday) {
       formData.append('birthday', editForm.birthday)
     }
-
     // 调用API更新用户信息
     await updateUserInfo(formData)
-
     // 更新成功后刷新用户信息
     const userData = await getUserInfo()
     userCache = userData
     user.value = userData
-
     // 清除头像预览和文件
     avatarPreview.value = null
     avatarFile.value = null
 
     // 关闭模态框
     closeEditModal()
-
-    // 可以添加一个提示消息
-    alert('个人资料更新成功！')
   } catch (error) {
     console.error('更新用户信息失败:', error)
     alert('更新失败，请稍后再试')
@@ -352,8 +339,6 @@ async function savePassword() {
       oldPassword: passwordForm.oldPassword,
       newPassword: passwordForm.newPassword,
     })
-
-    // 关闭模态框
     closePasswordModal()
 
     // 显示成功消息

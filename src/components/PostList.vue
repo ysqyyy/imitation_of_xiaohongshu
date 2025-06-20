@@ -1,5 +1,6 @@
 <template>
   <div class="post-list-container">
+    <!-- 帖子列表 -->
     <div class="posts-list" v-if="props.posts.length > 0">
       <div
         class="post-card"
@@ -96,18 +97,9 @@ function setupIntersectionObserver() {
   observer = new IntersectionObserver(
     (entries) => {
       const entry = entries[0]
-
-      // 始终记录观察器状态以便调试
-      console.log('IntersectionObserver 状态:', {
-        isIntersecting: entry.isIntersecting,
-        intersectionRatio: entry.intersectionRatio,
-        hasMore: props.hasMore,
-        isLoading: props.isLoading,
-      })
-
       // 如果目标元素进入视口，且有更多数据可加载，且当前不在加载中
       if (entry.isIntersecting && props.hasMore && !props.isLoading) {
-        console.log('滚动到底部，触发加载更多')
+        // console.log('滚动到底部，触发加载更多')
         emit('load-more')
       }
     },
@@ -139,11 +131,6 @@ function checkScrollPosition() {
 
   // 如果加载触发器在视口或视口下方附近
   if (rect.top <= windowHeight + 300) {
-    console.log('滚动检测：触发加载更多', {
-      triggerTop: rect.top,
-      windowHeight: windowHeight,
-      distance: rect.top - windowHeight,
-    })
     emit('load-more')
   }
 }
@@ -152,7 +139,6 @@ function checkScrollPosition() {
 function setupScrollListener() {
   window.addEventListener('scroll', checkScrollPosition, { passive: true })
 }
-
 // 移除滚动事件监听
 function cleanupScrollListener() {
   window.removeEventListener('scroll', checkScrollPosition)
@@ -164,7 +150,7 @@ watch(
   () => {
     // 如果帖子更新了，需要重新设置观察器
     nextTick(() => {
-      console.log('帖子列表更新，重新设置观察器和检查滚动位置')
+      // console.log('帖子列表更新，重新设置观察器和检查滚动位置')
       cleanupIntersectionObserver()
       setupIntersectionObserver()
       checkScrollPosition() // 检查滚动位置
@@ -174,7 +160,7 @@ watch(
 
 // 监听加载状态变化
 watch([() => props.hasMore, () => props.isLoading], () => {
-  console.log('加载状态变化:', { hasMore: props.hasMore, isLoading: props.isLoading })
+  // console.log('加载状态变化:', { hasMore: props.hasMore, isLoading: props.isLoading })
   nextTick(() => {
     checkScrollPosition() // 检查滚动位置
   })
@@ -191,7 +177,6 @@ onMounted(() => {
     checkScrollPosition()
   })
 })
-
 // 组件卸载时清理观察器
 onUnmounted(() => {
   cleanupIntersectionObserver()
@@ -408,27 +393,5 @@ export default {}
 
 .empty-text {
   font-size: 1.1rem;
-}
-
-@media (max-width: 1200px) {
-  .posts-list {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 900px) {
-  .posts-list {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 600px) {
-  .posts-list {
-    grid-template-columns: repeat(1, 1fr);
-  }
-
-  .post-card {
-    width: 100%;
-  }
 }
 </style>

@@ -1,6 +1,8 @@
 import request from '@/utils/request'
 import type { UserInfo, PostCard } from '@/types'
 import { getOssImageUrl, getOssImageUrls } from '@/utils/oss'
+import axios from 'axios'
+import auth from '@/utils/auth'
 // 获取用户信息  ok
 export async function getUserInfo() {
   try {
@@ -9,12 +11,12 @@ export async function getUserInfo() {
     console.log('获取用户信息响应:', res)
     const mypost = await getMyPosts() // 获取当前用户的帖子列表
     const myfavposts = await getMyFavPosts() // 获取当前用户的收藏帖子列表
-    console.log('获取我的收藏帖子列表响应:', myfavposts)
     const user: UserInfo = {
       name: res.data.username,
       id: res.data.email,
       img: res.data.avatar,
       desc: res.data.bio,
+      birthday: res.data.birthday,
       follow: res.data?.followCount,
       fans: res.data?.fanCount,
       likes: res.data?.likedCount,
@@ -22,7 +24,6 @@ export async function getUserInfo() {
       favPosts: myfavposts, // 使用获取的收藏帖子列表
       gender: res.data.gender,
     }
-    console.log('获取用户信息响应:', user)
     return user
   } catch (error) {
     console.error('Error fetching user info:', error)
@@ -36,7 +37,7 @@ export async function getOtherUserInfo(userId: number) {
     const res = await request.get(`http://localhost:8888/user/${userId}`)
     res.data.avatar = await getOssImageUrl(res.data.avatar) // 转换头像地址
 
-    console.log('获取其他用户信息响应1:', res)
+    console.log('获取其他用户信息响应:', res)
     const user: UserInfo = {
       name: res.data.username,
       id: res.data.email,
@@ -48,7 +49,6 @@ export async function getOtherUserInfo(userId: number) {
       likes: res.data?.likedCount,
       gender: res.data.gender,
     }
-    console.log('获取其他用户信息:', user)
     return user
   } catch (error) {
     console.error('Error fetching other user info:', error)
@@ -78,66 +78,53 @@ export async function unfollowUser(userId: number) {
   }
 }
 
-/**
- * 获取我的帖子列表 ok
- */
-export async function getMyPosts(page: number = 1, limit: number = 10) {
+// 获取我的帖子列表 ok
+export async function getMyPosts(page: number = 1, limit: number = 100) {
   try {
-    const res = await request.get('http://localhost:8888/posts/my')
+    const res = await request.get('http://localhost:8888/posts/my', {
+      page,
+      size: limit,
+    })
     console.log('获取我的帖子列表响应:', res)
     //转换oss图片地址  ok
     await Promise.all(
       res.data.map(async (item: any) => {
         item.img = await getOssImageUrl(item.img)
-        // 如有多个字段需要异步赋值，也可以在这里加
-      }),
-    )
-    //转换作者头像地址 ok
-    await Promise.all(
-      res.data.map(async (item: any) => {
         if (item.author && item.author.img) {
           item.author.img = await getOssImageUrl(item.author.img)
         }
       }),
     )
-    console.log('获取我的帖子列表响应:', res)
     return res.data
   } catch (error) {
     console.error('获取我的帖子列表失败:', error)
     throw error
   }
 }
-/**
- * 获取我的收藏帖子列表 ok
- */
-export async function getMyFavPosts(page: number = 1, limit: number = 10) {
+//获取我的收藏帖子列表 ok
+export async function getMyFavPosts(page: number = 1, limit: number = 100) {
   try {
-    const res = await request.get('http://localhost:8888/userCollects/list')
+    const res = await request.get('http://localhost:8888/userCollects/list', {
+      page,
+      size: limit,
+    })
     console.log('获取我的收藏帖子列表响应:', res)
     //转换oss图片地址 ok
     await Promise.all(
       res.data.records.map(async (item: any) => {
         item.img = await getOssImageUrl(item.img)
-        // 如有多个字段需要异步赋值，也可以在这里加
-      }),
-    )
-    //转换作者头像地址 ok
-    await Promise.all(
-      res.data.records.map(async (item: any) => {
         if (item.author && item.author.img) {
           item.author.img = await getOssImageUrl(item.author.img)
         }
       }),
     )
-    console.log('获取我的收藏帖子列表响应1:', res)
     return res.data.records
   } catch (error) {
     console.error('获取我的帖子列表失败:', error)
     throw error
   }
 }
-import axios from 'axios'
-import auth from '@/utils/auth'
+
 /**
  * 更新用户信息  ok
  * @param userInfo 用户信息对象或FormData
