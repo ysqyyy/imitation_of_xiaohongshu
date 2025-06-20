@@ -175,6 +175,7 @@ export async function sendComment(
         {
           headers: {
             'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${auth.getToken()}`,
           },
         },
       )
@@ -187,6 +188,7 @@ export async function sendComment(
         {
           headers: {
             'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${auth.getToken()}`,
           },
         },
       )
