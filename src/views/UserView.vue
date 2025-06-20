@@ -12,7 +12,7 @@
           <div class="user-id">小红书号：{{ user.id }}</div>
           <div class="user-desc">{{ user.desc }}</div>
           <div class="user-stats">
-            <span>{{ user.follow }} 关注</span>
+            <span class="stat-item">{{ user.follow }} <FollowList :userId="currentUserId" /></span>
             <span>{{ user.fans }} 粉丝</span>
             <span>{{ user.likes }} 获赞与收藏</span>
           </div>
@@ -57,7 +57,8 @@ import type { UserInfo, PostCard } from '../types'
 import { getOtherUserInfo, getUserPosts } from '../api/user'
 import PostList from '../components/PostList.vue'
 import FollowButton from '../components/FollowButton.vue'
-
+import FollowList from '../components/FollowList.vue'
+const currentUserId = ref<number | undefined>(undefined)
 const route = useRoute()
 const router = useRouter()
 const userId = computed(() => route.params.id as string)
@@ -77,6 +78,7 @@ const user = ref<UserInfo>({
   favPosts: [],
   gender: 0,
   birthday: '',
+  userId: 0,
 })
 
 // 标签页配置
@@ -114,6 +116,8 @@ onMounted(async () => {
     // 获取用户基本信息
     const userData = await getOtherUserInfo(Number(userId.value))
     user.value = userData
+    currentUserId.value = userData.userId
+
     // 加载用户的帖子
     await loadUserPosts()
   } catch (error) {
@@ -272,6 +276,12 @@ main {
   padding: 1rem;
 }
 
+/* 统计项样式 */
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
 .load-more-btn {
   background-color: #ff2d55;
   color: white;

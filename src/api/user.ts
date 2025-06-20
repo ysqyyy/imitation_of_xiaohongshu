@@ -13,6 +13,7 @@ export async function getUserInfo(): Promise<UserInfo> {
     const mypost = await getMyPosts() // 获取当前用户的帖子列表
     const myfavposts = await getMyFavPosts() // 获取当前用户的收藏帖子列表
     const user: UserInfo = {
+      userId: res.data.userId, // 用户类型
       name: res.data.username,
       id: res.data.email,
       img: res.data.avatar,
@@ -49,6 +50,7 @@ export async function getOtherUserInfo(userId: number): Promise<UserInfo> {
       likes: res.data?.likedCount,
       gender: res.data.gender,
       birthday: res.data.birthday,
+      userId: res.data.userId, // 用户类型
     }
     return user
   } catch (error) {

@@ -15,6 +15,7 @@ export type PostCard = {
 }
 // 用户信息类型(他人+我的主页)
 export interface UserInfo {
+  userId: number
   id: string
   name: string
   img: string
@@ -67,4 +68,10 @@ export type PostDetail = {
   video?: string // 视频URL
   type?: 'image' | 'video' // 内容类型
   duration?: number // 视频时长
+}
+// 关注用户信息类型
+export interface FollowUser {
+  userId: number
+  username: string
+  avatar: string
 }
