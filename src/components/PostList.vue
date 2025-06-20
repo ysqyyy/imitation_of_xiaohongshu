@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="post-list-container">
     <div class="posts-list" v-if="props.posts.length > 0">
       <div
         class="post-card"
@@ -112,9 +112,9 @@ function setupIntersectionObserver() {
       }
     },
     {
-      root: null, // 默认为视口
-      rootMargin: '0px 0px 300px 0px', // 提前300px触发，增加触发区域
-      threshold: 0.01, // 当目标元素有1%进入视口时触发，降低阈值
+      root: null, // 使用页面视口作为根元素
+      rootMargin: '0px 0px 800px 0px', // 大幅提前触发，确保能在页面底部之前加载更多
+      threshold: 0, // 当目标元素刚出现时就触发，最大化灵敏度
     },
   )
 
@@ -217,12 +217,16 @@ export default {}
 </script>
 
 <style scoped>
+.post-list-container {
+  width: 100%;
+  overflow: visible; /* 确保内容可以溢出而不会创建滚动条 */
+}
+
 .posts-list {
   display: grid;
   grid-template-columns: repeat(3, 1fr); /* 创建3列网格 */
   grid-gap: 1.5rem;
   width: 100%;
-  min-height: 400px; /* 确保即使内容不足也保持最小高度 */
   box-sizing: border-box; /* 确保内边距不会增加元素的总宽度 */
   max-width: 100%; /* 确保不会超出父容器 */
 }
@@ -353,8 +357,13 @@ export default {}
   margin-top: 1rem;
   color: #999;
   font-size: 0.9rem;
-  min-height: 100px; /* 确保有足够的高度被检测 */
-  border-top: 1px solid #f0f0f0; /* 添加边框使其更明显 */
+  min-height: 60px; /* 稍微减小高度 */
+  width: 100%; /* 确保宽度占满 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative; /* 允许相对定位以便观察 */
+  overflow: visible; /* 确保内容可见 */
 }
 
 .loading-indicator {

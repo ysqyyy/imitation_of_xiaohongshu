@@ -84,6 +84,7 @@ export async function unfollowUser(userId: number) {
 export async function getMyPosts(page: number = 1, limit: number = 10) {
   try {
     const res = await request.get('http://localhost:8888/posts/my')
+    console.log('获取我的帖子列表响应:', res)
     //转换oss图片地址  ok
     await Promise.all(
       res.data.map(async (item: any) => {
@@ -112,6 +113,7 @@ export async function getMyPosts(page: number = 1, limit: number = 10) {
 export async function getMyFavPosts(page: number = 1, limit: number = 10) {
   try {
     const res = await request.get('http://localhost:8888/userCollects/list')
+    console.log('获取我的收藏帖子列表响应:', res)
     //转换oss图片地址 ok
     await Promise.all(
       res.data.records.map(async (item: any) => {
@@ -137,7 +139,7 @@ export async function getMyFavPosts(page: number = 1, limit: number = 10) {
 import axios from 'axios'
 import auth from '@/utils/auth'
 /**
- * 更新用户信息
+ * 更新用户信息  ok
  * @param userInfo 用户信息对象或FormData
  */
 export async function updateUserInfo(userInfo: FormData) {
@@ -182,21 +184,23 @@ export async function updatePassword(passwordInfo: { oldPassword: string; newPas
 export async function getUserPosts(
   userId: number,
   page: number = 1,
-  limit: number = 10,
+  limit: number = 9,
 ): Promise<{
   list: PostCard[]
   total: number
   hasMore: boolean
 }> {
   try {
-    const res = await request.get(`http://localhost:8888/posts/user/${userId}`, {
-      params: { page, limit },
+    const res = await request.get(`http://localhost:8888/posts/sb`, {
+      userId,
+      page,
+      size: limit,
     })
-
+    console.log('获取用户帖子列表响应1:', res)
     // 获取帖子数据
-    const list = res.data.records || []
-    const total = res.data.total || 0
-    const hasMore = page * limit < total
+    const list = res.data || []
+    const total = res.data.length || 0
+    const hasMore = page * limit <= total
 
     // 批量转换OSS图片地址
     const imgUrls = list.map((item: any) => item.img).filter(Boolean)

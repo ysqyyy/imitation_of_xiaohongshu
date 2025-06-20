@@ -408,7 +408,9 @@ async function submitPost() {
     formData.append('title', postData.value.title)
     formData.append('content', postData.value.content)
     if (postData.value.tags && postData.value.tags.length > 0) {
-      formData.append('tags', JSON.stringify(postData.value.tags))
+      // 去除引号，将标签数组转换为字符串形式 [旅游,]
+      const tagsString = postData.value.tags.join(',')
+      formData.append('tags', tagsString)
     }
     formData.append('isPrivate', String(postData.value.private))
 

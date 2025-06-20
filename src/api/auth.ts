@@ -1,7 +1,9 @@
+// src\api\auth.ts
 import request from '@/utils/request'
-import type { LoginRequest, RegisterRequest, RegisterResponse, AuthUserInfo } from '@/types/auth'
-import auth from '@/utils/auth'
+import type { LoginRequest, RegisterRequest, AuthUserInfo } from '@/types/auth'
+import type { Result } from '@/utils/request'
 import { getOssImageUrl } from '@/utils/oss'
+import auth from '@/utils/auth'
 // 用户登录 ok
 export async function login(data: LoginRequest): Promise<AuthUserInfo> {
   const req = {
@@ -26,7 +28,7 @@ export async function login(data: LoginRequest): Promise<AuthUserInfo> {
     console.log('用户信息已存储:', userInfo)
 
     if (res.code !== 200) {
-      throw new Error(res.message || '登录失败')
+      throw new Error(res.msg || '登录失败')
     }
     return res.data
   } catch (err) {
@@ -36,13 +38,19 @@ export async function login(data: LoginRequest): Promise<AuthUserInfo> {
 }
 
 // 用户注册
-export async function register(data: RegisterRequest): Promise<RegisterResponse> {
+export async function register(data: RegisterRequest): Promise<AuthUserInfo> {
+  const req = {
+    username: data.username,
+    account: data.email, // 后端使用 account 字段
+    password: data.password,
+    // 不需要发送 confirmPassword 到后端
+  }
   try {
-    const res = await request.post<RegisterResponse>('/auth/register', data)
+    const res: Result<AuthUserInfo> = await request.post<AuthUserInfo>('user/register', req)
     console.log('注册响应:', res)
 
     if (res.code !== 200) {
-      throw new Error(res.message || '注册失败')
+      throw new Error(res.msg || '注册失败')
     }
 
     return res.data
@@ -59,7 +67,7 @@ export async function logout(): Promise<void> {
     console.log('登出响应:', res)
 
     if (res.code !== 200) {
-      throw new Error(res.message || '登出失败')
+      throw new Error(res.msg || '登出失败')
     }
   } catch (err) {
     console.error('登出失败', err)
@@ -70,7 +78,7 @@ export async function logout(): Promise<void> {
 // 验证token
 export async function verifyToken(token: string): Promise<AuthUserInfo> {
   try {
-    const res = await request.get<AuthUserInfo>('/auth/verify', undefined, {
+    const res: Result<AuthUserInfo> = await request.get<AuthUserInfo>('/auth/verify', undefined, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -78,7 +86,7 @@ export async function verifyToken(token: string): Promise<AuthUserInfo> {
     console.log('验证token响应:', res)
 
     if (res.code !== 200) {
-      throw new Error(res.message || '验证token失败')
+      throw new Error(res.msg || '验证token失败')
     }
 
     return res.data

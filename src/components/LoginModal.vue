@@ -56,12 +56,12 @@
             />
           </div>
           <div class="form-group">
-            <label for="registerEmail">邮箱</label>
+            <label for="registerEmail">邮箱/手机号</label>
             <input
               id="registerEmail"
               v-model="registerForm.email"
-              type="email"
-              placeholder="请输入邮箱"
+              type="text"
+              placeholder="请输入邮箱/手机号"
               required
             />
           </div>
@@ -210,16 +210,19 @@ const handleRegister = async () => {
   registerLoading.value = true
   try {
     const result = await register(registerForm)
-    if (result.success) {
-      alert('注册成功！请登录')
-      isLogin.value = true
-      resetForms()
-    } else {
-      alert(result.message || '注册失败')
-    }
-  } catch (error) {
+    // 注册成功，直接保存用户信息（因为后端返回了 token）
+    auth.setToken(result.token, 7) // 保存7天
+    localStorage.setItem('userInfo', JSON.stringify(result.user))
+    closeModal()
+    alert('注册成功！')
+  } catch (error: any) {
     console.error('Register error:', error)
-    alert('注册失败，请稍后重试')
+    // 根据后端错误信息显示
+    if (error.message.includes('账号可能已存在')) {
+      alert('注册失败：该邮箱/手机号已被注册')
+    } else {
+      alert(error.message || '注册失败，请稍后重试')
+    }
   } finally {
     registerLoading.value = false
   }

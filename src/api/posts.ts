@@ -13,38 +13,42 @@ export interface RecommendPostsResponse {
  * @param limit 每页数量 size
  * @return Promise<{ list: PostCard[], total: number }> 分页帖子数据
  */
-export function fetchRecommendPosts(
+export async function fetchRecommendPosts(
   page: number = 1,
   limit: number = 10,
 ): Promise<RecommendPostsResponse> {
-  return request
-    .get('http://localhost:8888/posts/recommend', { page, limit })
-    .then((res) => {
-      // mock返回的数据结构包含code、data、message等字段
-      console.log('推荐API响应:', res)
-      const data = res.data
-
-      // 如果data已经包含list和total，直接返回
-      if (data && typeof data === 'object' && 'list' in data && 'total' in data) {
-        return data as RecommendPostsResponse
-      }
-      // 如果data是数组（旧格式），包装成新格式
-      if (Array.isArray(data)) {
-        return {
-          list: data,
-          total: data.length,
+  try {
+    const res = await request.get('http://localhost:8888/posts/recommend', { page, limit })
+    // mock返回的数据结构包含code、data、message等字段
+    console.log('推荐API响应:', res)
+    const data = res.data
+    await Promise.all(
+      data.map(async (item: any) => {
+        item.img = await getOssImageUrl(item.img)
+        // 如有多个字段需要异步赋值，也可以在这里加
+      }),
+    )
+    console.log('转换后的帖子数据:', data)
+    //转换oss图片地址 ok
+    await Promise.all(
+      data.map(async (item: any) => {
+        // 确保author存在且有img字段
+        if (item.author && item.author.img) {
+          // console.log('转换作者头像前:', item.author.img)
+          item.author.img = await getOssImageUrl(item.author.img)
+        } else {
+          console.warn('帖子作者信息不完整:', item.author)
         }
-      }
-      // 兜底返回空数据
-      return {
-        list: [],
-        total: 0,
-      }
-    })
-    .catch((err) => {
-      console.error('获取推荐帖子失败', err)
-      throw err
-    })
+      }),
+    )
+    return {
+      list: data,
+      total: data.length, // 假设返回的data是一个数组，total就是数组长度
+    }
+  } catch (error) {
+    console.error('获取推荐帖子失败:', error)
+    throw error
+  }
 }
 
 //关键词搜索帖子  ok

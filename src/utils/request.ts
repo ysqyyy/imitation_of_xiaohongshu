@@ -1,11 +1,12 @@
+// /utils/request.ts
 import axios from 'axios'
 import type { AxiosRequestConfig, AxiosInstance } from 'axios'
 import auth from '@/utils/auth'
 
-// 定义通用响应体结构
+// 定义通用响应体结构 - 修改为匹配后端的字段名
 export interface Result<T = unknown> {
   code: number
-  message: string
+  msg: string // 改为 msg，匹配后端
   data: T
 }
 

@@ -32,6 +32,13 @@
           </span>
         </div>
         <PostList :posts="posts" :emptyText="getEmptyText()" />
+
+        <!-- 加载状态和加载更多按钮 -->
+        <div v-if="loading" class="loading-indicator">正在加载...</div>
+        <div v-if="!loading && hasMore" class="load-more">
+          <button @click="loadUserPosts(true)" class="load-more-btn">加载更多</button>
+        </div>
+        <div v-if="!loading && posts.length > 0 && !hasMore" class="no-more">没有更多内容了</div>
       </section>
     </main>
   </div>
@@ -41,7 +48,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { UserInfo, PostCard } from '../types'
-import { getOtherUserInfo } from '../api/user'
+import { getOtherUserInfo, getUserPosts } from '../api/user'
 import PostList from '../components/PostList.vue'
 import FollowButton from '../components/FollowButton.vue'
 
@@ -70,6 +77,11 @@ const user = ref<UserInfo>({
 const tags = ref([{ label: 'TA的笔记', key: 'note' }])
 const activetag = ref('note')
 const posts = ref<PostCard[]>([])
+const loading = ref(false)
+const page = ref(1)
+const pageSize = ref(10)
+const hasMore = ref(false)
+const totalPosts = ref(0)
 
 // 检查当前用户是否为登录用户
 function checkIfCurrentUser() {
@@ -98,19 +110,56 @@ onMounted(async () => {
   }
 
   try {
+    // 获取用户基本信息
     const userData = await getOtherUserInfo(Number(userId.value))
     user.value = {
       ...userData,
       img: userData.img || defaultAvatar,
     }
 
-    if (userData.myPosts && userData.myPosts.length > 0) {
-      posts.value = userData.myPosts
-    }
+    // 加载用户的帖子
+    await loadUserPosts()
   } catch (error) {
     console.error('获取用户信息失败:', error)
   }
 })
+
+// 加载用户帖子数据
+async function loadUserPosts(isLoadMore = false) {
+  if (loading.value) return
+
+  loading.value = true
+  try {
+    // 如果不是加载更多，重置页码
+    if (!isLoadMore) {
+      page.value = 1
+      posts.value = []
+    }
+
+    // 获取用户帖子
+    const postsData = await getUserPosts(Number(userId.value), page.value, pageSize.value)
+
+    // 更新数据
+    if (isLoadMore) {
+      posts.value.push(...postsData.list)
+    } else {
+      posts.value = postsData.list
+    }
+
+    // 更新分页信息
+    hasMore.value = postsData.hasMore
+    totalPosts.value = postsData.total
+
+    // 如果是加载更多，增加页码
+    if (isLoadMore) {
+      page.value++
+    }
+  } catch (error) {
+    console.error('加载用户帖子失败:', error)
+  } finally {
+    loading.value = false
+  }
+}
 
 function selecttag(tagKey: string) {
   activetag.value = tagKey
@@ -215,6 +264,40 @@ main {
 .tag.active {
   color: #ff2d55;
   border-bottom: 2px solid #ff2d55;
+}
+
+/* 加载更多相关样式 */
+.loading-indicator {
+  text-align: center;
+  padding: 1rem;
+  color: #888;
+}
+
+.load-more {
+  text-align: center;
+  padding: 1rem;
+}
+
+.load-more-btn {
+  background-color: #ff2d55;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.5rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.load-more-btn:hover {
+  background-color: #ff1a4b;
+}
+
+.no-more {
+  text-align: center;
+  padding: 1rem;
+  color: #aaa;
+  font-size: 0.9rem;
 }
 
 /* 响应式布局 */

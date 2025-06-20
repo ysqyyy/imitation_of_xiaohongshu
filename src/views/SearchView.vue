@@ -1,5 +1,5 @@
 <template>
-  <div class="layout">
+  <div class="layout" ref="layoutRef">
     <!-- 分类标签 -->
     <div class="category-bar">
       <span
@@ -22,13 +22,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchPosts } from '../api/posts'
 import type { PostCard } from '../types'
 import PostList from '../components/PostList.vue'
 
-const categories = ['全部', '美食', '旅行', '穿搭', '数码', '学习', '娱乐', '生活']
+// 分类相关变量
+const categories = ['全部', '美食', '旅游', '穿搭', '数码', '学习', '娱乐', '生活']
 const activeCategory = ref(0)
 const keyword = ref('')
 const posts = ref<PostCard[]>([])
@@ -51,7 +52,8 @@ async function loadInitialPosts() {
     const result = await fetchPosts(keyword.value, 1, 9, selectedCategory)
     posts.value = result.list
     totalPosts.value = result.total
-    hasMorePosts.value = result.total > result.list.length
+    hasMorePosts.value = result.list.length >= 9
+    console.log(hasMorePosts.value, result.list.length, result.total)
 
     isLoading.value = false
   } catch (error) {
@@ -79,9 +81,9 @@ async function loadMorePosts() {
     if (result.list.length > 0) {
       posts.value = [...posts.value, ...result.list]
     }
-
+    totalPosts.value += result.total
     // 更新是否还有更多数据
-    hasMorePosts.value = posts.value.length < result.total
+    hasMorePosts.value = posts.value.length >= 9
 
     isLoading.value = false
   } catch (error) {
@@ -90,10 +92,14 @@ async function loadMorePosts() {
   }
 }
 
+// 初始化组件
 onMounted(async () => {
+  // 检查URL中是否有搜索关键词
   if (route.query.keyword) {
     keyword.value = String(route.query.keyword)
   }
+
+  // 加载初始数据
   await loadInitialPosts()
 })
 
@@ -124,6 +130,9 @@ function selectCategory(idx: number) {
   max-width: 900px;
   margin: 0 auto;
   padding: 2.5rem 1.5rem;
+  /* min-height: 100vh; 确保内容区域至少占满整个视口高度 */
+  overflow-x: hidden; /* 防止水平滚动 */
+  /* height: auto; 允许高度自适应内容 */
 }
 .category-bar {
   display: flex;

@@ -1,3 +1,4 @@
+// src\types\auth.ts
 // 登录请求参数
 export interface LoginRequest {
   email: string
@@ -12,26 +13,24 @@ export interface RegisterRequest {
   confirmPassword: string
 }
 
-// // 登录响应数据
-// export interface LoginResponse {
-//   code: number
-//   msg?: string
-//   data: object
-// }
-interface ApiResponse<T = unknown> {
-  code: number
-  msg: string
-  data: T
-}
-// 注册响应数据
-export interface RegisterResponse {
-  success: boolean
-  message?: string
-  userInfo?: AuthUserInfo
+// 用户信息
+export interface UserInfo {
+  userId: number
+  username: string
+  account: string
+  password: null
+  avatar: string | null
+  bio: string
+  gender: number
+  birthday: string | null
+  phone: string | null
+  email: string
+  status: number
+  createdAt: string
 }
 
-// 认证用户信息
+// 认证响应数据（登录和注册成功后的返回数据）
 export interface AuthUserInfo {
-  user: object
+  user: UserInfo
   token: string
 }
