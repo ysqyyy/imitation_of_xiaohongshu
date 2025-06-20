@@ -26,6 +26,7 @@ export interface UserInfo {
   myPosts?: PostCard[]
   likedPosts?: PostCard[]
   favPosts?: PostCard[]
+  gender?: number // 性别: 1-男, 2-女, 0-未知
 }
 //post、comment作者
 export type Author = {

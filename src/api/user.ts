@@ -1,6 +1,6 @@
 import request from '@/utils/request'
 import type { UserInfo, PostCard } from '@/types'
-import { getOssImageUrl } from '@/utils/oss'
+import { getOssImageUrl, getOssImageUrls } from '@/utils/oss'
 // 获取用户信息  ok
 export async function getUserInfo() {
   try {
@@ -169,5 +169,63 @@ export async function updatePassword(passwordInfo: { oldPassword: string; newPas
   } catch (error) {
     console.error('修改密码失败:', error)
     throw error
+  }
+}
+
+/**
+ * 获取其他用户的帖子列表(分页) todo
+ * @param userId 用户ID
+ * @param page 页码
+ * @param limit 每页数量
+ * @returns 帖子列表
+ */
+export async function getUserPosts(
+  userId: number,
+  page: number = 1,
+  limit: number = 10,
+): Promise<{
+  list: PostCard[]
+  total: number
+  hasMore: boolean
+}> {
+  try {
+    const res = await request.get(`http://localhost:8888/posts/user/${userId}`, {
+      params: { page, limit },
+    })
+
+    // 获取帖子数据
+    const list = res.data.records || []
+    const total = res.data.total || 0
+    const hasMore = page * limit < total
+
+    // 批量转换OSS图片地址
+    const imgUrls = list.map((item: any) => item.img).filter(Boolean)
+    const authorImgUrls = list.map((item: any) => item.author?.img).filter(Boolean)
+
+    // 批量获取OSS URL
+    const convertedImgUrls = await getOssImageUrls(imgUrls)
+    const convertedAuthorImgUrls = await getOssImageUrls(authorImgUrls)
+
+    // 更新帖子图片
+    list.forEach((item: any, index: number) => {
+      if (item.img && convertedImgUrls[index]) {
+        item.img = convertedImgUrls[index]
+      }
+    })
+
+    // 更新作者头像
+    let authorImgIndex = 0
+    list.forEach((item: any) => {
+      if (item.author && item.author.img) {
+        item.author.img = convertedAuthorImgUrls[authorImgIndex++]
+      }
+    })
+
+    console.log('获取用户帖子列表:', { list, total, hasMore, page, limit })
+    return { list, total, hasMore }
+  } catch (error) {
+    console.error('获取用户帖子列表失败:', error)
+    // 出错时返回空数据
+    return { list: [], total: 0, hasMore: false }
   }
 }

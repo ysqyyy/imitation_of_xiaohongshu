@@ -49,12 +49,13 @@
     </div>
 
     <!-- 底部加载指示器和交叉观察目标 -->
-    <div v-if="props.hasMore" ref="loadMoreTrigger" class="load-more-trigger">
+    <div ref="loadMoreTrigger" class="load-more-trigger">
       <div v-if="props.isLoading" class="loading-indicator">
         <div class="loading-spinner"></div>
         <span>加载更多...</span>
       </div>
-      <div v-else class="load-more-text">向下滑动加载更多</div>
+      <div v-else-if="props.hasMore" class="load-more-text">向下滑动加载更多</div>
+      <div v-else class="load-more-text">已经到底了</div>
     </div>
   </div>
 </template>
@@ -96,6 +97,14 @@ function setupIntersectionObserver() {
     (entries) => {
       const entry = entries[0]
 
+      // 始终记录观察器状态以便调试
+      console.log('IntersectionObserver 状态:', {
+        isIntersecting: entry.isIntersecting,
+        intersectionRatio: entry.intersectionRatio,
+        hasMore: props.hasMore,
+        isLoading: props.isLoading,
+      })
+
       // 如果目标元素进入视口，且有更多数据可加载，且当前不在加载中
       if (entry.isIntersecting && props.hasMore && !props.isLoading) {
         console.log('滚动到底部，触发加载更多')
@@ -104,8 +113,8 @@ function setupIntersectionObserver() {
     },
     {
       root: null, // 默认为视口
-      rootMargin: '0px 0px 200px 0px', // 提前200px触发
-      threshold: 0.1, // 当目标元素有10%进入视口时触发
+      rootMargin: '0px 0px 300px 0px', // 提前300px触发，增加触发区域
+      threshold: 0.01, // 当目标元素有1%进入视口时触发，降低阈值
     },
   )
 
@@ -121,26 +130,72 @@ function cleanupIntersectionObserver() {
   }
 }
 
+// 检查滚动位置
+function checkScrollPosition() {
+  if (!loadMoreTrigger.value || !props.hasMore || props.isLoading) return
+
+  const rect = loadMoreTrigger.value.getBoundingClientRect()
+  const windowHeight = window.innerHeight || document.documentElement.clientHeight
+
+  // 如果加载触发器在视口或视口下方附近
+  if (rect.top <= windowHeight + 300) {
+    console.log('滚动检测：触发加载更多', {
+      triggerTop: rect.top,
+      windowHeight: windowHeight,
+      distance: rect.top - windowHeight,
+    })
+    emit('load-more')
+  }
+}
+
+// 添加滚动事件监听
+function setupScrollListener() {
+  window.addEventListener('scroll', checkScrollPosition, { passive: true })
+}
+
+// 移除滚动事件监听
+function cleanupScrollListener() {
+  window.removeEventListener('scroll', checkScrollPosition)
+}
+
 // 监听帖子列表变化，重新设置观察器
 watch(
   () => props.posts.length,
   () => {
     // 如果帖子更新了，需要重新设置观察器
     nextTick(() => {
+      console.log('帖子列表更新，重新设置观察器和检查滚动位置')
       cleanupIntersectionObserver()
       setupIntersectionObserver()
+      checkScrollPosition() // 检查滚动位置
     })
   },
 )
 
+// 监听加载状态变化
+watch([() => props.hasMore, () => props.isLoading], () => {
+  console.log('加载状态变化:', { hasMore: props.hasMore, isLoading: props.isLoading })
+  nextTick(() => {
+    checkScrollPosition() // 检查滚动位置
+  })
+})
+
 // 组件挂载时设置观察器
 onMounted(() => {
   setupIntersectionObserver()
+  setupScrollListener() // 添加滚动监听器
+
+  // 初始检查，以防内容不足以触发滚动
+  nextTick(() => {
+    console.log('初始检查滚动位置')
+    checkScrollPosition()
+  })
 })
 
 // 组件卸载时清理观察器
 onUnmounted(() => {
   cleanupIntersectionObserver()
+  cleanupScrollListener() // 移除滚动监听器
 })
 // 格式化视频时长（秒转为 mm:ss 格式）
 function formatDuration(seconds: number): string {
@@ -295,8 +350,11 @@ export default {}
 .load-more-trigger {
   text-align: center;
   padding: 2rem 0;
+  margin-top: 1rem;
   color: #999;
   font-size: 0.9rem;
+  min-height: 100px; /* 确保有足够的高度被检测 */
+  border-top: 1px solid #f0f0f0; /* 添加边框使其更明显 */
 }
 
 .loading-indicator {
