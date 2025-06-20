@@ -66,6 +66,8 @@ export async function getPostById(id: number): Promise<PostDetail | null> {
     let authorImgUrl: string | null = null
     const commentAuthorImgUrls: string[] = []
     const replyAuthorImgUrls: string[] = []
+    const commentImgUrls: string[] = [] // 评论图片URL
+    const replyImgUrls: string[] = [] // 回复图片URL
 
     // 收集帖子图片URL
     if (res.data.imgs && res.data.imgs.length > 0) {
@@ -89,11 +91,21 @@ export async function getPostById(id: number): Promise<PostDetail | null> {
           commentAuthorImgUrls.push(comment.author.img)
         }
 
+        // 收集评论图片URL
+        if (comment.imageUrl) {
+          commentImgUrls.push(comment.imageUrl.slice(2, comment.imageUrl.length - 2))
+        }
+
         // 收集二级评论(回复)的作者头像
         if (comment.reply && comment.reply.length > 0) {
           comment.reply.forEach((reply) => {
             if (reply.author && reply.author.img) {
               replyAuthorImgUrls.push(reply.author.img)
+            }
+
+            // 收集回复图片URL
+            if (reply.imageUrl) {
+              replyImgUrls.push(reply.imageUrl.slice(2, reply.imageUrl.length - 2))
             }
           })
         }
@@ -107,12 +119,16 @@ export async function getPostById(id: number): Promise<PostDetail | null> {
       convertedAuthorImgUrl,
       convertedCommentAuthorImgs,
       convertedReplyAuthorImgs,
+      convertedCommentImgUrls,
+      convertedReplyImgUrls,
     ] = await Promise.all([
       imgUrls.length > 0 ? getOssImageUrls(imgUrls) : [],
       videoUrl ? getOssVideoUrl(videoUrl) : null,
       authorImgUrl ? getOssImageUrl(authorImgUrl) : null,
       commentAuthorImgUrls.length > 0 ? getOssImageUrls(commentAuthorImgUrls) : [],
       replyAuthorImgUrls.length > 0 ? getOssImageUrls(replyAuthorImgUrls) : [],
+      commentImgUrls.length > 0 ? getOssImageUrls(commentImgUrls) : [],
+      replyImgUrls.length > 0 ? getOssImageUrls(replyImgUrls) : [],
     ])
 
     // 更新帖子图片
@@ -134,10 +150,17 @@ export async function getPostById(id: number): Promise<PostDetail | null> {
     if (res.data.comments && res.data.comments.length > 0) {
       let commentImgIndex = 0
       let replyImgIndex = 0
+      let commentImgUrlIndex = 0
+      let replyImgUrlIndex = 0
 
       res.data.comments.forEach((comment) => {
         if (comment.author && comment.author.img) {
           comment.author.img = convertedCommentAuthorImgs[commentImgIndex++]
+        }
+
+        // 更新评论图片URL
+        if (comment.imageUrl) {
+          comment.imageUrl = convertedCommentImgUrls[commentImgUrlIndex++]
         }
 
         // 更新二级评论(回复)的作者头像
@@ -145,6 +168,11 @@ export async function getPostById(id: number): Promise<PostDetail | null> {
           comment.reply.forEach((reply) => {
             if (reply.author && reply.author.img) {
               reply.author.img = convertedReplyAuthorImgs[replyImgIndex++]
+            }
+
+            // 更新回复图片URL
+            if (reply.imageUrl) {
+              reply.imageUrl = convertedReplyImgUrls[replyImgUrlIndex++]
             }
           })
         }
@@ -168,9 +196,20 @@ export async function sendComment(
   type: string,
 ): Promise<CommentResponse | null> {
   try {
+    console.log('发送评论请求类型:', type)
+    console.log('发送评论内容:', contentData)
+
+    // 如果是FormData，打印其中的内容
+    if (contentData instanceof FormData) {
+      console.log('FormData内容:')
+      for (const pair of contentData.entries()) {
+        console.log(`${pair[0]}: ${pair[1]}`)
+      }
+    }
+
     if (type === 'post') {
       const res = await axios.post<CommentResponse>(
-        `http://localhost:8888/comments/posts`,
+        `http://localhost:8888/posts/comments`,
         contentData,
         {
           headers: {

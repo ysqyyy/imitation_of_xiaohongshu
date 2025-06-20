@@ -102,6 +102,16 @@
               <div class="comment-content">
                 <div class="comment-user">{{ comment.author.name }}</div>
                 <div class="comment-text">{{ comment.content }}</div>
+
+                <!-- 评论图片 -->
+                <div v-if="comment.imageUrl" class="comment-image">
+                  <img
+                    :src="comment.imageUrl"
+                    alt="评论图片"
+                    @click="previewImage(comment.imageUrl)"
+                  />
+                </div>
+
                 <div class="comment-actions">
                   <span class="time">{{ comment.time }}</span>
                   <LikeButton
@@ -207,6 +217,16 @@
                         >
                         {{ reply.content }}
                       </div>
+
+                      <!-- 回复图片 -->
+                      <div v-if="reply.imageUrl" class="reply-image">
+                        <img
+                          :src="reply.imageUrl"
+                          alt="回复图片"
+                          @click="previewImage(reply.imageUrl)"
+                        />
+                      </div>
+
                       <div class="reply-actions">
                         <span class="time">{{ reply.time }}</span>
                         <LikeButton
@@ -281,7 +301,20 @@
             />
             <div class="comment-actions">
               <label for="comment-image" class="image-upload-btn">
-                <i class="fas fa-image"></i>
+                <svg
+                  viewBox="0 0 24 24"
+                  width="22"
+                  height="22"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
               </label>
               <input
                 type="file"
@@ -583,6 +616,30 @@ async function handleDeleteComment(commentId: number) {
   } finally {
     isCommentDeleting.value = null
   }
+}
+
+// 图片预览函数
+function previewImage(url: string) {
+  // 可以实现一个简单的全屏预览，或者使用第三方库
+  // 这里实现简单的预览方式
+  const img = new Image()
+  img.src = url
+  img.style.position = 'fixed'
+  img.style.top = '0'
+  img.style.left = '0'
+  img.style.width = '100vw'
+  img.style.height = '100vh'
+  img.style.objectFit = 'contain'
+  img.style.backgroundColor = 'rgba(0, 0, 0, 0.8)'
+  img.style.zIndex = '10000'
+  img.style.cursor = 'pointer'
+
+  // 点击关闭预览
+  img.onclick = () => {
+    document.body.removeChild(img)
+  }
+
+  document.body.appendChild(img)
 }
 
 // 处理评论图片选择
@@ -1630,7 +1687,7 @@ footer {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  color: #999;
+  color: #333;
   cursor: pointer;
   margin-right: 10px;
   transition: all 0.2s;
@@ -1863,5 +1920,47 @@ footer {
 .parent-name {
   color: #007bff;
   font-weight: 500;
+}
+
+/* 评论图片样式 */
+.comment-image {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  max-width: 250px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.comment-image img {
+  width: 100%;
+  max-height: 250px;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.comment-image img:hover {
+  transform: scale(1.02);
+}
+
+/* 回复图片样式 */
+.reply-image {
+  margin-top: 6px;
+  margin-bottom: 6px;
+  max-width: 200px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.reply-image img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.reply-image img:hover {
+  transform: scale(1.02);
 }
 </style>

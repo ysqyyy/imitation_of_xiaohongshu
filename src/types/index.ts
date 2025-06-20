@@ -46,6 +46,7 @@ export type Comment = {
   time: string
   reply?: Comment[]
   isLike: boolean
+  imageUrl?: string // 评论图片URL
 }
 //帖子详细信息
 export type PostDetail = {
