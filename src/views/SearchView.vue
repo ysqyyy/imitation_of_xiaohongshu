@@ -49,9 +49,9 @@ async function loadInitialPosts() {
       activeCategory.value !== 0 ? categories[activeCategory.value] : undefined
 
     const result = await fetchPosts(keyword.value, 1, 9, selectedCategory)
-    posts.value = result.list
+    posts.value = result
     // totalPosts.value = result.total
-    hasMorePosts.value = result.list.length >= 9
+    hasMorePosts.value = result.length >= 9
     // console.log(hasMorePosts.value, result.list.length, result.total)
     isLoading.value = false
   } catch (error) {
@@ -74,12 +74,12 @@ async function loadMorePosts() {
     const result = await fetchPosts(keyword.value, currentPage.value, 9, selectedCategory)
 
     // 如果返回了新数据，添加到列表中
-    if (result.list.length > 0) {
-      posts.value = [...posts.value, ...result.list]
+    if (result.length > 0) {
+      posts.value = [...posts.value, ...result]
     }
     // totalPosts.value += result.total
     // 更新是否还有更多数据
-    hasMorePosts.value = result.list.length >= 9
+    hasMorePosts.value = result.length >= 9
 
     isLoading.value = false
   } catch (error) {

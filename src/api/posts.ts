@@ -1,6 +1,6 @@
 import request from '@/utils/request'
 import type { PostCard, PostDetail } from '@/types'
-import { getOssImageUrl } from '@/utils/oss'
+import { getOssImageUrls } from '@/utils/oss'
 // 获取推荐帖子响应类型
 export interface RecommendPostsResponse {
   list: PostCard[]
@@ -8,39 +8,38 @@ export interface RecommendPostsResponse {
 }
 
 // 获取推荐帖子  ok无数据待改oss
-/**
- * @param page 页码
- * @param limit 每页数量 size
- * @return Promise<{ list: PostCard[], total: number }> 分页帖子数据
- */
 export async function fetchRecommendPosts(
   page: number = 1,
   limit: number = 10,
 ): Promise<RecommendPostsResponse> {
   try {
     const res = await request.get('http://localhost:8888/posts/recommend', { page, limit })
-    // mock返回的数据结构包含code、data、message等字段
     console.log('推荐API响应:', res)
-    const data = res.data
-    await Promise.all(
-      data.map(async (item: any) => {
-        item.img = await getOssImageUrl(item.img)
-        // 如有多个字段需要异步赋值，也可以在这里加
-      }),
-    )
+    // 使用类型断言
+    const data = (res.data || []) as PostCard[]
+
+    // 收集所有需要转换的图片URL
+    const postImgUrls = data.map((item) => item.img).filter(Boolean)
+    const authorImgUrls = data
+      .filter((item) => item.author && item.author.img)
+      .map((item) => item.author.img)
+    const [convertedPostImgUrls, convertedAuthorImgUrls] = await Promise.all([
+      getOssImageUrls(postImgUrls),
+      getOssImageUrls(authorImgUrls),
+    ])
+    let postImgIndex = 0
+    data.forEach((item) => {
+      if (item.img) {
+        item.img = convertedPostImgUrls[postImgIndex++]
+      }
+    })
+    let authorImgIndex = 0
+    data.forEach((item) => {
+      if (item.author && item.author.img) {
+        item.author.img = convertedAuthorImgUrls[authorImgIndex++]
+      }
+    })
     console.log('转换后的帖子数据:', data)
-    //转换oss图片地址 ok
-    await Promise.all(
-      data.map(async (item: any) => {
-        // 确保author存在且有img字段
-        if (item.author && item.author.img) {
-          // console.log('转换作者头像前:', item.author.img)
-          item.author.img = await getOssImageUrl(item.author.img)
-        } else {
-          console.warn('帖子作者信息不完整:', item.author)
-        }
-      }),
-    )
     return {
       list: data,
       total: data.length, // 假设返回的data是一个数组，total就是数组长度
@@ -57,19 +56,14 @@ export async function fetchRecommendPosts(
  * @param page 页码
  * @param limit 每页数量
  * @param tag 标签（可选）
- * @return Promise<{ list: PostCard[], total: number }> 分页帖子数据
+ * @return Promise<PostCard[]> 分页帖子数据
  */
-export interface SearchPostsResponse {
-  list: PostCard[]
-  total: number
-}
-
 export function fetchPosts(
   keyword: string,
   page: number = 1,
   limit: number = 9,
   tag?: string,
-): Promise<SearchPostsResponse> {
+): Promise<PostCard[]> {
   return request
     .get('http://localhost:8888/posts/search', {
       keyword,
@@ -79,46 +73,34 @@ export function fetchPosts(
     })
     .then(async (res) => {
       console.log('搜索API响应:', res)
-      const data = res.data.records
-      //转换oss图片地址 ok
-      await Promise.all(
-        data.map(async (item: any) => {
-          item.img = await getOssImageUrl(item.img)
-          // 如有多个字段需要异步赋值，也可以在这里加
-        }),
-      )
-      console.log('转换后的帖子数据:', data)
-      //转换oss图片地址 ok
-      await Promise.all(
-        data.map(async (item: any) => {
-          // 确保author存在且有img字段
-          if (item.author && item.author.img) {
-            // console.log('转换作者头像前:', item.author.img)
-            item.author.img = await getOssImageUrl(item.author.img)
-          } else {
-            console.warn('帖子作者信息不完整:', item.author)
-          }
-        }),
-      )
+      // 使用Record类型代替any
+      const responseData = res.data as Record<string, unknown>
+      const data = (responseData.records || []) as PostCard[]
 
-      // 如果data已经包含list和total，直接返回
-      if (data && typeof data === 'object' && 'list' in data && 'total' in data) {
-        return data as SearchPostsResponse
-      }
-
-      // 如果data是数组（旧格式），包装成新格式
-      if (Array.isArray(data)) {
-        return {
-          list: data,
-          total: data.length,
+      // 收集所有需要转换的图片URL
+      const postImgUrls = data.map((item) => item.img).filter(Boolean)
+      const authorImgUrls = data
+        .filter((item) => item.author && item.author.img)
+        .map((item) => item.author.img)
+      const [convertedPostImgUrls, convertedAuthorImgUrls] = await Promise.all([
+        getOssImageUrls(postImgUrls),
+        getOssImageUrls(authorImgUrls),
+      ])
+      let postImgIndex = 0
+      data.forEach((item) => {
+        if (item.img) {
+          item.img = convertedPostImgUrls[postImgIndex++]
         }
-      }
-
-      // 兜底返回空数据
-      return {
-        list: [],
-        total: 0,
-      }
+      })
+      let authorImgIndex = 0
+      data.forEach((item) => {
+        if (item.author && item.author.img) {
+          item.author.img = convertedAuthorImgUrls[authorImgIndex++]
+        }
+      })
+      console.log('转换后的帖子数据:', data)
+      if (Array.isArray(data)) return data
+      return []
     })
     .catch((err) => {
       console.error('搜索失败', err)

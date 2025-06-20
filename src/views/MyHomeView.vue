@@ -180,7 +180,7 @@ const user = ref<UserInfo>({
 // 标签页响应式数据
 const tags = ref([
   { label: '我的笔记', key: 'note' },
-  { label: '点赞', key: 'like' },
+  // { label: '点赞', key: 'like' },
   { label: '收藏', key: 'fav' },
 ])
 const activetag = ref('note')
@@ -205,7 +205,7 @@ onMounted(async () => {
 function getPostsBytag(user: UserInfo, tag: string) {
   if (tag === 'note') return user.myPosts || []
   if (tag === 'fav') return user.favPosts || []
-  if (tag === 'like') return user.likedPosts || []
+  // if (tag === 'like') return user.likedPosts || []
   return []
 }
 
@@ -213,7 +213,7 @@ function getPostsBytag(user: UserInfo, tag: string) {
 function getEmptyText() {
   if (activetag.value === 'note') return '笔记'
   if (activetag.value === 'fav') return '收藏'
-  if (activetag.value === 'like') return '点赞'
+  // if (activetag.value === 'like') return '点赞'
   return '内容'
 }
 

@@ -10,19 +10,10 @@ import type {
   PublishResponse,
 } from '@/types/api'
 import axios from 'axios'
-import { getOssImageUrl, getOssVideoUrl } from '@/utils/oss'
+import { getOssImageUrl, getOssVideoUrl, getOssImageUrls } from '@/utils/oss'
 // 发布帖子 ok
 export async function publishPost(formData: FormData): Promise<PublishResponse | null> {
   try {
-    console.log(
-      '发布帖子请求FormData:',
-      formData.getAll('title'),
-      formData.getAll('content'),
-      formData.getAll('tags'),
-      formData.getAll('images'),
-      formData.getAll('video'),
-      formData.getAll('isPrivate'),
-    )
     const res = await axios.post('http://localhost:8888/posts/publish', formData, {
       headers: {
         Authorization: `Bearer ${auth.getToken()}`,
@@ -42,9 +33,6 @@ export async function publishPost(formData: FormData): Promise<PublishResponse |
 
 /**
  * 编辑帖子   ok
- * @param id 帖子ID
- * @param formData 包含帖子数据的FormData对象
- * @return 成功或失败信息
  */
 export async function editPost(id: number, formData: FormData): Promise<SuccessResponse | null> {
   try {
@@ -71,40 +59,96 @@ export async function getPostById(id: number): Promise<PostDetail | null> {
     const res = await request.get<PostDetail>(`http://localhost:8888/posts/detail?id=${id}`)
     console.log('获取帖子详情请求:', res)
     // const res = await request.get<PostDetail>(`/detail/${id}`)
-    // const ossImageUrls = res.data.imgs.map(async (img) => await getOssImageUrl(img))
+
+    // 收集所有需要转换的图片和视频URL
+    let imgUrls: string[] = []
+    let videoUrl: string | null = null
+    let authorImgUrl: string | null = null
+    const commentAuthorImgUrls: string[] = []
+    const replyAuthorImgUrls: string[] = []
+
+    // 收集帖子图片URL
     if (res.data.imgs && res.data.imgs.length > 0) {
-      const ossImageUrls = await Promise.all(res.data.imgs.map((img) => getOssImageUrl(img)))
-      res.data.imgs = ossImageUrls
+      imgUrls = res.data.imgs.filter(Boolean)
     }
+
+    // 收集视频URL
     if (res.data.video) {
-      //注意这里视频url存在imgs[0]中
-      const ossVideoUrl = res.data.video ? await getOssVideoUrl(res.data.video) : null
-      res.data.video = ossVideoUrl
+      videoUrl = res.data.video
     }
-    //处理作者头像
+
+    // 收集作者头像URL
     if (res.data.author && res.data.author.img) {
-      const ossAuthorImg = await getOssImageUrl(res.data.author.img)
-      res.data.author.img = ossAuthorImg
+      authorImgUrl = res.data.author.img
     }
-    //处理评论头像
+
+    // 收集评论和回复中的作者头像URL
     if (res.data.comments && res.data.comments.length > 0) {
-      await Promise.all(
-        res.data.comments.map(async (comment) => {
-          if (comment.author && comment.author.img) {
-            comment.author.img = await getOssImageUrl(comment.author.img)
-          }
-          // 处理二级评论（回复）的头像
-          if (comment.reply && comment.reply.length > 0) {
-            await Promise.all(
-              comment.reply.map(async (replyComment) => {
-                if (replyComment.author && replyComment.author.img) {
-                  replyComment.author.img = await getOssImageUrl(replyComment.author.img)
-                }
-              }),
-            )
-          }
-        }),
-      )
+      res.data.comments.forEach((comment) => {
+        if (comment.author && comment.author.img) {
+          commentAuthorImgUrls.push(comment.author.img)
+        }
+
+        // 收集二级评论(回复)的作者头像
+        if (comment.reply && comment.reply.length > 0) {
+          comment.reply.forEach((reply) => {
+            if (reply.author && reply.author.img) {
+              replyAuthorImgUrls.push(reply.author.img)
+            }
+          })
+        }
+      })
+    }
+
+    // 批量转换URL
+    const [
+      convertedImgUrls,
+      convertedVideoUrl,
+      convertedAuthorImgUrl,
+      convertedCommentAuthorImgs,
+      convertedReplyAuthorImgs,
+    ] = await Promise.all([
+      imgUrls.length > 0 ? getOssImageUrls(imgUrls) : [],
+      videoUrl ? getOssVideoUrl(videoUrl) : null,
+      authorImgUrl ? getOssImageUrl(authorImgUrl) : null,
+      commentAuthorImgUrls.length > 0 ? getOssImageUrls(commentAuthorImgUrls) : [],
+      replyAuthorImgUrls.length > 0 ? getOssImageUrls(replyAuthorImgUrls) : [],
+    ])
+
+    // 更新帖子图片
+    if (res.data.imgs && res.data.imgs.length > 0) {
+      res.data.imgs = convertedImgUrls
+    }
+
+    // 更新视频URL
+    if (res.data.video) {
+      res.data.video = convertedVideoUrl
+    }
+
+    // 更新作者头像
+    if (res.data.author && res.data.author.img) {
+      res.data.author.img = convertedAuthorImgUrl
+    }
+
+    // 更新评论和回复中的作者头像
+    if (res.data.comments && res.data.comments.length > 0) {
+      let commentImgIndex = 0
+      let replyImgIndex = 0
+
+      res.data.comments.forEach((comment) => {
+        if (comment.author && comment.author.img) {
+          comment.author.img = convertedCommentAuthorImgs[commentImgIndex++]
+        }
+
+        // 更新二级评论(回复)的作者头像
+        if (comment.reply && comment.reply.length > 0) {
+          comment.reply.forEach((reply) => {
+            if (reply.author && reply.author.img) {
+              reply.author.img = convertedReplyAuthorImgs[replyImgIndex++]
+            }
+          })
+        }
+      })
     }
 
     if (res.code === 200) {
@@ -250,7 +294,6 @@ export async function unlikeComment(id: number): Promise<LikeResponse | null> {
     const res = await request.delete<LikeResponse>(`http://localhost:8888/userLikes/comments/${id}`)
     if (res.code === 200) {
       console.log('取消点赞pinglun请求:', res)
-
       return res.data
     }
     return null
@@ -263,7 +306,6 @@ export async function unlikeComment(id: number): Promise<LikeResponse | null> {
 // 删除评论  ok
 export async function deleteComment(id: number): Promise<SuccessResponse | null> {
   try {
-    console.log('删除评论请求ID:', id)
     const res = await request.delete<SuccessResponse>(
       `http://localhost:8888/comments/${id}/comments`,
     )
