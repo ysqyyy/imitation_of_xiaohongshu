@@ -164,27 +164,34 @@ export async function getPostById(id: number): Promise<PostDetail | null> {
 
 //发送评论 （帖子/评论）  ok
 export async function sendComment(
-  id: number,
-  content: string,
+  contentData: FormData,
   type: string,
 ): Promise<CommentResponse | null> {
   try {
     if (type === 'post') {
-      const res = await request.post<CommentResponse>(
-        `http://localhost:8888/posts/${id}/comments?content=${content}`,
+      const res = await axios.post<CommentResponse>(
+        `http://localhost:8888/comments/posts`,
+        contentData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        },
       )
-      console.log('发送帖子评论请求:', res)
-      if (res.code === 200) {
-        return res.data
-      }
+      console.log('发送带图片的帖子评论请求:', res)
+      return res.data
     } else if (type === 'comment') {
-      const res = await request.post<CommentResponse>(
-        `http://localhost:8888/comments/${id}/comments?content=${content}`,
+      const res = await axios.post<CommentResponse>(
+        `http://localhost:8888/comments/comments`,
+        contentData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        },
       )
-      console.log('发送评论评论请求:', res)
-      if (res.code === 200) {
-        return res.data
-      }
+      console.log('发送带图片的评论回复请求:', res)
+      return res.data
     }
     return null
   } catch (error) {

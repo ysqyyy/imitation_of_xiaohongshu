@@ -279,7 +279,25 @@
               :placeholder="replyTarget ? `回复 @${replyTarget.author.name}` : '说点什么...'"
               @keyup.enter="submitComment"
             />
-            <button class="send-btn" @click="submitComment">发送</button>
+            <div class="comment-actions">
+              <label for="comment-image" class="image-upload-btn">
+                <i class="fas fa-image"></i>
+              </label>
+              <input
+                type="file"
+                id="comment-image"
+                class="image-input"
+                accept="image/*"
+                @change="handleCommentImageChange"
+              />
+              <button class="send-btn" @click="submitComment">发送</button>
+            </div>
+
+            <!-- 预览已选择的图片 -->
+            <div v-if="commentImage" class="image-preview">
+              <img :src="commentImagePreview" alt="预览图片" />
+              <button class="remove-image-btn" @click="removeCommentImage">×</button>
+            </div>
           </div>
 
           <!-- 互动按钮区 -->
@@ -391,6 +409,8 @@ const videoError = ref<string>('') // 视频错误信息
 const isFavoriteLoading = ref(false) // 收藏操作加载状态
 const currentUserId = ref<number | null>(null) // 当前登录用户ID
 const isCommentDeleting = ref<number | null>(null) // 正在删除的评论ID
+const commentImage = ref<File | null>(null) // 评论图片文件
+const commentImagePreview = ref<string>('') // 评论图片预览
 
 // 视频错误处理
 function handleVideoError(e: Event) {
@@ -565,6 +585,47 @@ async function handleDeleteComment(commentId: number) {
   }
 }
 
+// 处理评论图片选择
+function handleCommentImageChange(e: Event) {
+  const target = e.target as HTMLInputElement
+  if (target.files && target.files.length > 0) {
+    const file = target.files[0]
+
+    // 检查文件类型
+    if (!file.type.startsWith('image/')) {
+      alert('请选择图片文件')
+      return
+    }
+
+    // 检查文件大小，限制为2MB
+    if (file.size > 2 * 1024 * 1024) {
+      alert('图片大小不能超过2MB')
+      return
+    }
+
+    commentImage.value = file
+
+    // 创建图片预览
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      commentImagePreview.value = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
+// 移除评论图片
+function removeCommentImage() {
+  commentImage.value = null
+  commentImagePreview.value = ''
+
+  // 重置文件输入
+  const fileInput = document.getElementById('comment-image') as HTMLInputElement
+  if (fileInput) {
+    fileInput.value = ''
+  }
+}
+
 onMounted(async () => {
   // 从localStorage获取当前用户信息
   try {
@@ -723,15 +784,26 @@ async function submitComment() {
 
   let result = null
   try {
-    if (replyTarget.value) {
-      result = await sendComment(replyTarget.value.id, commentText.value, 'comment')
-      replyTarget.value = null
-    } else if (post.value) {
-      result = await sendComment(post.value.id, commentText.value, 'post')
+    const formData = new FormData()
+    formData.append('content', commentText.value)
+    if (commentImage.value) {
+      if (commentImage.value) {
+        formData.append('images', commentImage.value)
+      }
     }
 
-    // 评论成功后清空输入框
+    if (replyTarget.value) {
+      formData.append('id', replyTarget.value.id.toString())
+      result = await sendComment(formData, 'comment')
+      replyTarget.value = null
+    } else if (post.value) {
+      formData.append('id', post.value.id.toString())
+      result = await sendComment(formData, 'post')
+    }
+
+    // 评论成功后清空输入框和图片
     commentText.value = ''
+    removeCommentImage()
 
     // 评论成功后刷新帖子详情，获取最新评论
     if (result && post.value) {
@@ -1528,6 +1600,7 @@ footer {
 
 .comment-input-wrapper {
   display: flex;
+  flex-direction: column;
   margin-bottom: 16px;
   position: relative;
 }
@@ -1542,6 +1615,70 @@ footer {
   background: #f8f8f8;
   transition: all 0.3s;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.comment-actions {
+  display: flex;
+  align-items: center;
+  margin-left: 10px;
+}
+
+.image-upload-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: #999;
+  cursor: pointer;
+  margin-right: 10px;
+  transition: all 0.2s;
+}
+
+.image-upload-btn:hover {
+  color: #ff2d55;
+  background-color: #f0f0f0;
+}
+
+.image-input {
+  display: none;
+}
+
+.image-preview {
+  margin-top: 10px;
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.remove-image-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.remove-image-btn:hover {
+  background: rgba(0, 0, 0, 0.7);
 }
 
 .comment-input:focus {
