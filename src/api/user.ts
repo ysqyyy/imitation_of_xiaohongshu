@@ -3,10 +3,11 @@ import type { UserInfo, PostCard } from '@/types'
 import { getOssImageUrl, getOssImageUrls } from '@/utils/oss'
 import axios from 'axios'
 import auth from '@/utils/auth'
+import type { MyFavPostsResponse, MyPostsResponse, UserInfoResponse } from '@/types/response'
 // 获取用户信息  ok
-export async function getUserInfo() {
+export async function getUserInfo(): Promise<UserInfo> {
   try {
-    const res = await request.get('http://localhost:8888/user/getUserInfo')
+    const res: UserInfoResponse = await request.get('http://localhost:8888/user/getUserInfo')
     res.data.avatar = await getOssImageUrl(res.data.avatar) // 转换头像地址
     console.log('获取用户信息响应:', res)
     const mypost = await getMyPosts() // 获取当前用户的帖子列表
@@ -32,11 +33,10 @@ export async function getUserInfo() {
 }
 
 // 获取其他用户的信息 todo ok
-export async function getOtherUserInfo(userId: number) {
+export async function getOtherUserInfo(userId: number): Promise<UserInfo> {
   try {
-    const res = await request.get(`http://localhost:8888/user/${userId}`)
+    const res: UserInfoResponse = await request.get(`http://localhost:8888/user/${userId}`)
     res.data.avatar = await getOssImageUrl(res.data.avatar) // 转换头像地址
-
     console.log('获取其他用户信息响应:', res)
     const user: UserInfo = {
       name: res.data.username,
@@ -48,6 +48,7 @@ export async function getOtherUserInfo(userId: number) {
       fans: res.data?.fanCount,
       likes: res.data?.likedCount,
       gender: res.data.gender,
+      birthday: res.data.birthday,
     }
     return user
   } catch (error) {
@@ -79,22 +80,29 @@ export async function unfollowUser(userId: number) {
 }
 
 // 获取我的帖子列表 ok
-export async function getMyPosts(page: number = 1, limit: number = 100) {
+export async function getMyPosts(page: number = 1, limit: number = 100): Promise<PostCard[]> {
   try {
-    const res = await request.get('http://localhost:8888/posts/my', {
+    const res: MyPostsResponse = await request.get('http://localhost:8888/posts/my', {
       page,
       size: limit,
     })
     console.log('获取我的帖子列表响应:', res)
-    //转换oss图片地址  ok
-    await Promise.all(
-      res.data.map(async (item: any) => {
-        item.img = await getOssImageUrl(item.img)
-        if (item.author && item.author.img) {
-          item.author.img = await getOssImageUrl(item.author.img)
-        }
-      }),
-    )
+    // 批量转换OSS图片地址
+    const imgUrls = res.data.map((item) => item.img).filter(Boolean)
+    const authorImgUrls = res.data.map((item) => item.author?.img).filter(Boolean)
+    const convertedImgUrls = await getOssImageUrls(imgUrls)
+    const convertedAuthorImgUrls = await getOssImageUrls(authorImgUrls)
+    res.data.forEach((item, index: number) => {
+      if (item.img && convertedImgUrls[index]) {
+        item.img = convertedImgUrls[index]
+      }
+    })
+    let authorImgIndex = 0
+    res.data.forEach((item) => {
+      if (item.author && item.author.img) {
+        item.author.img = convertedAuthorImgUrls[authorImgIndex++]
+      }
+    })
     return res.data
   } catch (error) {
     console.error('获取我的帖子列表失败:', error)
@@ -102,22 +110,29 @@ export async function getMyPosts(page: number = 1, limit: number = 100) {
   }
 }
 //获取我的收藏帖子列表 ok
-export async function getMyFavPosts(page: number = 1, limit: number = 100) {
+export async function getMyFavPosts(page: number = 1, limit: number = 100): Promise<PostCard[]> {
   try {
-    const res = await request.get('http://localhost:8888/userCollects/list', {
+    const res: MyFavPostsResponse = await request.get('http://localhost:8888/userCollects/list', {
       page,
       size: limit,
     })
     console.log('获取我的收藏帖子列表响应:', res)
-    //转换oss图片地址 ok
-    await Promise.all(
-      res.data.records.map(async (item: any) => {
-        item.img = await getOssImageUrl(item.img)
-        if (item.author && item.author.img) {
-          item.author.img = await getOssImageUrl(item.author.img)
-        }
-      }),
-    )
+    // 批量转换OSS图片地址
+    const imgUrls = res.data.records.map((item) => item.img).filter(Boolean)
+    const authorImgUrls = res.data.records.map((item) => item.author?.img).filter(Boolean)
+    const convertedImgUrls = await getOssImageUrls(imgUrls)
+    const convertedAuthorImgUrls = await getOssImageUrls(authorImgUrls)
+    res.data.records.forEach((item, index: number) => {
+      if (item.img && convertedImgUrls[index]) {
+        item.img = convertedImgUrls[index]
+      }
+    })
+    let authorImgIndex = 0
+    res.data.records.forEach((item) => {
+      if (item.author && item.author.img) {
+        item.author.img = convertedAuthorImgUrls[authorImgIndex++]
+      }
+    })
     return res.data.records
   } catch (error) {
     console.error('获取我的帖子列表失败:', error)
@@ -125,19 +140,15 @@ export async function getMyFavPosts(page: number = 1, limit: number = 100) {
   }
 }
 
-/**
- * 更新用户信息  ok
- * @param userInfo 用户信息对象或FormData
- */
+// 更新用户信息  ok
 export async function updateUserInfo(userInfo: FormData) {
   try {
     const res = await axios.put('http://localhost:8888/user/update', userInfo, {
       headers: {
-        'Content-Type': 'multipart/form-data', // 确保使用正确的Content-Type
-        Authorization: `Bearer ${auth.getToken()}`, // 添加token到请求头
+        'Content-Type': 'multipart/form-data',
+        Authorization: `Bearer ${auth.getToken()}`,
       },
     })
-
     console.log('更新用户信息响应:', res)
     return res.data
   } catch (error) {
@@ -145,11 +156,7 @@ export async function updateUserInfo(userInfo: FormData) {
     throw error
   }
 }
-
-/**
- * 修改用户密码   ok
- * @param passwordInfo 包含旧密码和新密码的对象
- */
+//修改用户密码   ok
 export async function updatePassword(passwordInfo: { oldPassword: string; newPassword: string }) {
   try {
     const res = await request.put('http://localhost:8888/user/updatePassword', passwordInfo)
@@ -161,62 +168,43 @@ export async function updatePassword(passwordInfo: { oldPassword: string; newPas
   }
 }
 
-/**
- * 获取其他用户的帖子列表(分页) todo
- * @param userId 用户ID
- * @param page 页码
- * @param limit 每页数量
- * @returns 帖子列表
- */
+// 获取其他用户的帖子列表(分页) ok
 export async function getUserPosts(
   userId: number,
   page: number = 1,
   limit: number = 9,
-): Promise<{
-  list: PostCard[]
-  total: number
-  hasMore: boolean
-}> {
+): Promise<PostCard[]> {
   try {
-    const res = await request.get(`http://localhost:8888/posts/sb`, {
+    const res: MyPostsResponse = await request.get(`http://localhost:8888/posts/sb`, {
       userId,
       page,
       size: limit,
     })
-    console.log('获取用户帖子列表响应1:', res)
-    // 获取帖子数据
+    console.log('获取用户帖子列表响应:', res)
     const list = res.data || []
-    const total = res.data.length || 0
-    const hasMore = page * limit <= total
 
     // 批量转换OSS图片地址
-    const imgUrls = list.map((item: any) => item.img).filter(Boolean)
-    const authorImgUrls = list.map((item: any) => item.author?.img).filter(Boolean)
-
+    const imgUrls = list.map((item) => item.img).filter(Boolean)
+    const authorImgUrls = list.map((item) => item.author?.img).filter(Boolean)
     // 批量获取OSS URL
     const convertedImgUrls = await getOssImageUrls(imgUrls)
     const convertedAuthorImgUrls = await getOssImageUrls(authorImgUrls)
-
     // 更新帖子图片
-    list.forEach((item: any, index: number) => {
+    list.forEach((item, index: number) => {
       if (item.img && convertedImgUrls[index]) {
         item.img = convertedImgUrls[index]
       }
     })
-
     // 更新作者头像
     let authorImgIndex = 0
-    list.forEach((item: any) => {
+    list.forEach((item) => {
       if (item.author && item.author.img) {
         item.author.img = convertedAuthorImgUrls[authorImgIndex++]
       }
     })
-
-    console.log('获取用户帖子列表:', { list, total, hasMore, page, limit })
-    return { list, total, hasMore }
+    return list
   } catch (error) {
     console.error('获取用户帖子列表失败:', error)
-    // 出错时返回空数据
-    return { list: [], total: 0, hasMore: false }
+    return []
   }
 }

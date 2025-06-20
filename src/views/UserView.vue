@@ -3,7 +3,7 @@
     <main>
       <!-- 个人信息区 -->
       <section class="user-section">
-        <img class="avatar" :src="user.img || defaultAvatar" alt="头像" />
+        <img class="avatar" :src="user.img" alt="头像" />
         <div class="user-info">
           <div class="name-action">
             <h2>{{ user.name }}</h2>
@@ -31,7 +31,13 @@
             {{ tag.label }}
           </span>
         </div>
-        <PostList :posts="posts" :emptyText="getEmptyText()" />
+        <PostList
+          :posts="posts"
+          :emptyText="getEmptyText()"
+          :hasMore="hasMore"
+          :is-loading="loading"
+          @load-more="loadUserPosts(true)"
+        />
 
         <!-- 加载状态和加载更多按钮 -->
         <div v-if="loading" class="loading-indicator">正在加载...</div>
@@ -55,8 +61,6 @@ import FollowButton from '../components/FollowButton.vue'
 const route = useRoute()
 const router = useRouter()
 const userId = computed(() => route.params.id as string)
-const defaultAvatar =
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop'
 
 // 用户信息响应式数据
 const user = ref<UserInfo>({
@@ -71,6 +75,8 @@ const user = ref<UserInfo>({
   myPosts: [],
   likedPosts: [],
   favPosts: [],
+  gender: 0,
+  birthday: '',
 })
 
 // 标签页配置
@@ -79,9 +85,8 @@ const activetag = ref('note')
 const posts = ref<PostCard[]>([])
 const loading = ref(false)
 const page = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(9)
 const hasMore = ref(false)
-const totalPosts = ref(0)
 
 // 检查当前用户是否为登录用户
 function checkIfCurrentUser() {
@@ -89,9 +94,7 @@ function checkIfCurrentUser() {
   if (userInfoStr) {
     try {
       const userInfo = JSON.parse(userInfoStr)
-      console.log('当前用户信息:', userInfo)
       if (userInfo.userId && userInfo.userId.toString() === userId.value) {
-        // 如果是当前登录用户，跳转到我的主页
         router.push('/myhome')
         return true
       }
@@ -104,19 +107,13 @@ function checkIfCurrentUser() {
 
 // 获取用户信息
 onMounted(async () => {
-  // 检查是否为当前登录用户，如果是则跳转到我的主页
   if (checkIfCurrentUser()) {
     return
   }
-
   try {
     // 获取用户基本信息
     const userData = await getOtherUserInfo(Number(userId.value))
-    user.value = {
-      ...userData,
-      img: userData.img || defaultAvatar,
-    }
-
+    user.value = userData
     // 加载用户的帖子
     await loadUserPosts()
   } catch (error) {
@@ -135,20 +132,17 @@ async function loadUserPosts(isLoadMore = false) {
       page.value = 1
       posts.value = []
     }
-
     // 获取用户帖子
     const postsData = await getUserPosts(Number(userId.value), page.value, pageSize.value)
-
     // 更新数据
     if (isLoadMore) {
-      posts.value.push(...postsData.list)
+      posts.value.push(...postsData)
     } else {
-      posts.value = postsData.list
+      posts.value = postsData
     }
 
     // 更新分页信息
-    hasMore.value = postsData.hasMore
-    totalPosts.value = postsData.total
+    hasMore.value = postsData.length >= pageSize.value
 
     // 如果是加载更多，增加页码
     if (isLoadMore) {

@@ -298,19 +298,16 @@ function handleImageUpload(event: Event) {
     // 检查每个文件
     for (let i = 0; i < filesToProcess; i++) {
       const file = input.files[i]
-
       // 检查文件类型
       if (!file.type.startsWith('image/')) {
         alert(`文件 "${file.name}" 不是有效的图片类型`)
         continue
       }
-
       // 检查文件大小 (限制为10MB)
       if (file.size > 10 * 1024 * 1024) {
         alert(`图片 "${file.name}" 大小超过10MB，请压缩后再上传`)
         continue
       }
-
       const reader = new FileReader()
 
       reader.onload = (e) => {
