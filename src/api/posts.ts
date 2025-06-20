@@ -144,3 +144,47 @@ export function fetchRelatedVideos(postId: number, page: number): Promise<number
       throw err
     })
 }
+// 获取用户个性化推荐帖子（需要登录）
+/**
+ * @param page 页码
+ * @param limit 每页数量
+ * @return Promise<{ list: PostCard[], total: number }> 分页帖子数据
+ */
+export async function fetchMyRecommendPosts(
+  page: number = 1,
+  limit: number = 10,
+): Promise<RecommendPostsResponse> {
+  try {
+    const res = await request.get('http://localhost:8888/posts/myRecommend', { page, limit })
+    console.log('个性化推荐API响应:', res)
+    const data = res.data.records || res.data // 根据API文档，数据在records字段中
+
+    // 转换OSS图片地址
+    await Promise.all(
+      data.map(async (item: any) => {
+        item.img = await getOssImageUrl(item.img)
+      }),
+    )
+
+    // 转换作者头像OSS地址
+    await Promise.all(
+      data.map(async (item: any) => {
+        if (item.author && item.author.img) {
+          item.author.img = await getOssImageUrl(item.author.img)
+        } else {
+          console.warn('帖子作者信息不完整:', item.author)
+        }
+      }),
+    )
+
+    console.log('转换后的个性化推荐帖子数据:', data)
+
+    return {
+      list: data,
+      total: res.data.total || data.length,
+    }
+  } catch (error) {
+    console.error('获取个性化推荐帖子失败:', error)
+    throw error
+  }
+}

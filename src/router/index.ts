@@ -10,29 +10,45 @@ const router = createRouter({
       component: HomeView,
     },
     {
+      path: '/my-recommend',
+      name: 'my-recommend',
+      component: () => import('../views/MyRecommendView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/myhome',
       name: 'myhome',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
       component: () => import('../views/MyHomeView.vue'),
     },
     {
       path: '/search',
       name: 'search',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
       component: () => import('../views/SearchView.vue'),
     },
     {
       path: '/user/:id',
       name: 'user',
-      // 用户个人主页
       component: () => import('../views/UserView.vue'),
     },
-    // detail 不再是独立路由，改用 query 参数控制
   ],
+})
+
+// 路由守卫 - 检查登录状态
+router.beforeEach((to, from, next) => {
+  // 检查路由是否需要认证
+  if (to.matched.some((record) => record.meta.requiresAuth)) {
+    // 动态导入auth工具，避免循环依赖
+    import('@/utils/auth').then(({ auth }) => {
+      if (!auth.isLoggedIn()) {
+        // 用户未登录，跳转到首页
+        next({ name: 'home' })
+      } else {
+        next()
+      }
+    })
+  } else {
+    next()
+  }
 })
 
 export default router
