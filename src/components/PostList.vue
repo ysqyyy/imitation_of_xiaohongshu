@@ -66,7 +66,7 @@ import { defineProps, ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import type { PostCard } from '../types/index'
 import { goDetail } from '../api/detail'
 import LikeButton from './LikeButton.vue'
-
+import { auth } from '@/utils/auth'
 // 定义组件属性
 const props = defineProps<{
   posts: PostCard[]
@@ -170,12 +170,13 @@ watch([() => props.hasMore, () => props.isLoading], () => {
 onMounted(() => {
   setupIntersectionObserver()
   setupScrollListener() // 添加滚动监听器
-
-  // 初始检查，以防内容不足以触发滚动
-  nextTick(() => {
-    console.log('初始检查滚动位置')
-    checkScrollPosition()
-  })
+  if (auth.getToken()) {
+    // 初始检查，以防内容不足以触发滚动
+    nextTick(() => {
+      console.log('初始检查滚动位置')
+      checkScrollPosition()
+    })
+  }
 })
 // 组件卸载时清理观察器
 onUnmounted(() => {

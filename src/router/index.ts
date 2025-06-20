@@ -8,6 +8,7 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView,
+      meta: { requiresAuth: true },
     },
     {
       path: '/my-recommend',
@@ -19,11 +20,13 @@ const router = createRouter({
       path: '/myhome',
       name: 'myhome',
       component: () => import('../views/MyHomeView.vue'),
+      meta: { requiresAuth: true },
     },
     {
       path: '/search',
       name: 'search',
       component: () => import('../views/SearchView.vue'),
+      meta: { requiresAuth: true },
     },
     {
       path: '/user/:id',
@@ -40,8 +43,16 @@ router.beforeEach((to, from, next) => {
     // 动态导入auth工具，避免循环依赖
     import('@/utils/auth').then(({ auth }) => {
       if (!auth.isLoggedIn()) {
-        // 用户未登录，跳转到首页
-        next({ name: 'home' })
+        // 用户未登录
+        if (to.path === '/' || to.path === '/search') {
+          // 对于主页和搜索页，允许访问但在组件内显示登录提示
+          next()
+          // 设置全局状态，指示需要显示登录弹窗
+          localStorage.setItem('showLoginModal', 'true')
+        } else {
+          // 其他需要登录的页面，跳转到首页
+          next({ name: 'home' })
+        }
       } else {
         next()
       }

@@ -30,7 +30,7 @@
     <PostList
       v-else
       :posts="myPosts"
-      :emptyText="'暂无个性化推荐内容'"
+      :emptyText="'个性化推荐内容'"
       :has-more="myHasMore"
       :is-loading="myLoading"
       @load-more="handleMyLoadMore"
@@ -51,7 +51,7 @@ const posts = ref<PostCardType[]>([])
 const loading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(9)
-const total = ref(0)
+// const total = ref(0)
 const hasMore = ref(true)
 
 const myPosts = ref<PostCardType[]>([])
@@ -67,28 +67,20 @@ const loadPosts = async (page: number = 1) => {
     console.log('正在加载中，跳过请求')
     return
   }
-
-  console.log('开始加载帖子，页码:', page)
   loading.value = true
 
   try {
     const result = await fetchRecommendPosts(page, pageSize.value)
-    console.log('获取到帖子数量:', result.list.length)
-
     if (page === 1) {
-      // 初始页，直接替换
       posts.value = result.list
     } else {
-      // 后续页，追加数据
       posts.value = [...posts.value, ...result.list]
     }
-
-    // 更新分页信息
     currentPage.value = page
-    total.value = result.total
-    hasMore.value = posts.value.length < result.total
+    // total.value = result.total
+    hasMore.value = result.list.length >= pageSize.value
 
-    console.log('当前页:', currentPage.value, '总数:', result.total)
+    // console.log('当前页:', currentPage.value, '总数:', result.total)
   } catch (error) {
     console.error('加载帖子失败:', error)
   } finally {
@@ -151,8 +143,14 @@ const handleMyLoadMore = () => {
 }
 
 onMounted(async () => {
-  console.log('组件已挂载，开始加载数据')
-  await loadPosts(1)
+  if (!auth.getToken()) {
+    hasMore.value = false
+    myHasMore.value = false
+    return
+  } else {
+    console.log('组件已挂载，开始加载数据')
+    await loadPosts(1)
+  }
 })
 
 function switchTab(tab: 'hot' | 'personal') {
@@ -161,7 +159,7 @@ function switchTab(tab: 'hot' | 'personal') {
     if (tab === 'personal') {
       myCurrentPage.value = 1
       loadMyPosts(1)
-    } else if (tab === 'hot') {
+    } else if (tab === 'hot' && auth.getToken()) {
       currentPage.value = 1
       loadPosts(1)
     }

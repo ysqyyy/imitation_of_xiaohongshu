@@ -171,21 +171,8 @@ const handleOverlayClick = () => {
 const handleLogin = async () => {
   loginLoading.value = true
   try {
-    const result = await login(loginForm)
-    // 登录成功，保存用户信息到localStorage或状态管理
-    auth.setToken(result.token, 7) // 保存7天
-
-    // 确保存储头像和用户名
-    const userInfo = {
-      ...result.user,
-      username: (result.user as any).username || (result.user as any).name,
-      avatar: (result.user as any).avatar || (result.user as any).img,
-    }
-    localStorage.setItem('userInfo', JSON.stringify(userInfo))
-
+    await login(loginForm)
     closeModal()
-
-    // 刷新页面以更新登录状态
     window.location.reload()
     router.push('/') // 跳转到用户主页
   } catch (error) {

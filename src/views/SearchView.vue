@@ -27,8 +27,10 @@ import { useRoute } from 'vue-router'
 import { fetchPosts } from '../api/posts'
 import type { PostCard } from '../types'
 import PostList from '../components/PostList.vue'
+import { auth } from '../utils/auth'
+import { useRouter } from 'vue-router'
 const route = useRoute()
-
+const router = useRouter()
 // 分类相关变量
 const categories = ['全部', '美食', '旅游', '穿搭', '数码', '学习', '娱乐', '生活']
 const activeCategory = ref(0)
@@ -90,6 +92,11 @@ async function loadMorePosts() {
 
 // 初始化组件
 onMounted(async () => {
+  if (!auth.getToken()) {
+    hasMorePosts.value = false
+    router.push('/')
+    return
+  }
   // 检查URL中是否有搜索关键词
   if (route.query.keyword) {
     keyword.value = String(route.query.keyword)

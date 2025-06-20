@@ -8,7 +8,11 @@
           >我的主页</RouterLink
         >
         <div class="nav-bottom">
-          <div class="publish-btn" @click="openPublishModal">
+          <div
+            class="publish-btn"
+            :class="{ 'publish-btn-disabled': !isLoggedIn }"
+            @click="handlePublishClick"
+          >
             <span class="plus-icon">+</span><span>发布</span>
           </div>
         </div>
@@ -78,6 +82,15 @@ const defaultAvatar = '/src/assets/logo.svg' // 默认头像
 // 在组件挂载时检查登录状态
 onMounted(() => {
   checkLoginStatus()
+
+  // 检查是否需要显示登录弹窗（从路由守卫设置）
+  const shouldShowLoginModal = localStorage.getItem('showLoginModal')
+  if (shouldShowLoginModal === 'true') {
+    showLoginModal.value = true
+    console.log('显示登录弹窗，因为路由守卫设置了标记')
+    // 清除标记，避免重复显示
+    localStorage.removeItem('showLoginModal')
+  }
 })
 
 // 监听路由变化，检查登录状态
@@ -152,6 +165,17 @@ function openPublishModal() {
 }
 function closePublishModal() {
   showPublish.value = false
+}
+
+// 处理发布按钮点击
+function handlePublishClick() {
+  if (!isLoggedIn.value) {
+    // 如果未登录，显示登录弹窗
+    showLoginModal.value = true
+  } else {
+    // 已登录，打开发布弹窗
+    openPublishModal()
+  }
 }
 </script>
 
@@ -238,6 +262,18 @@ aside {
   color: #fff;
   border-color: #ff2d55;
   transform: scale(1.05);
+}
+
+.publish-btn-disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.publish-btn-disabled:hover {
+  background: transparent;
+  color: #888;
+  border-color: #aaa;
+  transform: none;
 }
 
 .plus-icon {
