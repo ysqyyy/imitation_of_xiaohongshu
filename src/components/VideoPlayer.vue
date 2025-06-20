@@ -94,6 +94,7 @@
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import type { PostDetail } from '../types/index'
 import { fetchRelatedVideos as apiFetchRelatedVideos } from '../api/posts'
+import { getPostById } from '../api/detail'
 
 interface Props {
   visible: boolean
@@ -135,21 +136,32 @@ function getPostImage(post: PostDetail | null): string {
   return '' // 默认空字符串
 }
 
-// 获取相关视频帖子 todo
+// 获取相关视频帖子
 async function fetchRelatedVideos(postId: number, pageNum: number = 1): Promise<PostDetail[]> {
   try {
     console.log(`获取与帖子ID ${postId} 相关的视频，页码: ${pageNum}`)
 
-    // 调用API获取相关视频
-    const response = await apiFetchRelatedVideos(postId, pageNum)
-    return response.list
+    // 调用API获取相关视频ID列表
+    const postIds = await apiFetchRelatedVideos(postId, pageNum)
+
+    // 使用 Promise.all 并行获取所有帖子详情
+    // 这样我们可以在不退出视频播放器的情况下获取完整的帖子信息
+    const detailPromises = postIds.map(async (id: number) => {
+      const detail = await getPostById(id)
+      return detail
+    })
+
+    const details = await Promise.all(detailPromises)
+
+    // 过滤掉 null 结果并添加到列表
+    return details.filter((detail): detail is PostDetail => detail !== null)
   } catch (error) {
     console.error('获取相关视频失败:', error)
     return []
   }
 }
 
-// 加载更多视频 todo ok
+// 加载更多视频
 async function loadMoreVideos() {
   if (isLoading.value || !hasMoreVideos.value || !props.posts) return
 
@@ -157,10 +169,10 @@ async function loadMoreVideos() {
 
   try {
     const nextPage = page.value + 1
-    const newVideos = await fetchRelatedVideos(props.posts.id, nextPage)
+    const newVideoDetails = await fetchRelatedVideos(props.posts.id, nextPage)
 
-    if (newVideos.length > 0) {
-      videoPosts.value = [...videoPosts.value, ...newVideos]
+    if (newVideoDetails.length > 0) {
+      videoPosts.value = [...videoPosts.value, ...newVideoDetails]
       page.value = nextPage
     } else {
       hasMoreVideos.value = false
@@ -172,7 +184,7 @@ async function loadMoreVideos() {
   }
 }
 
-// 初始化视频列表  todo ok
+// 初始化视频列表
 async function initVideoPosts() {
   if (!props.posts) return
 
@@ -180,8 +192,8 @@ async function initVideoPosts() {
   videoPosts.value = [props.posts] // 先添加当前视频
 
   try {
-    const relatedVideos = await fetchRelatedVideos(props.posts.id, 1)
-    videoPosts.value = [...videoPosts.value, ...relatedVideos]
+    const relatedVideoDetails = await fetchRelatedVideos(props.posts.id, 1)
+    videoPosts.value = [...videoPosts.value, ...relatedVideoDetails]
     page.value = 1
   } catch (error) {
     console.error('初始化视频列表失败:', error)

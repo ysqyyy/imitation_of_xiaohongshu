@@ -60,7 +60,8 @@
 <script setup lang="ts">
 import { ref, defineExpose, defineProps } from 'vue'
 import { useRouter } from 'vue-router'
-import { getFollowList, type FollowUser } from '@/api/follow'
+import { getFollowList } from '@/api/follow'
+import type { FollowUser } from '@/types/index'
 
 const props = defineProps({
   userId: Number,

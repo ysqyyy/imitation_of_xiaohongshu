@@ -7,7 +7,7 @@ export interface RecommendPostsResponse {
   total: number
 }
 
-// 获取推荐帖子  ok无数据待改oss
+// 获取推荐帖子  ok
 export async function fetchRecommendPosts(
   page: number = 1,
   limit: number = 10,
@@ -117,45 +117,27 @@ export function fetchPosts(
  * @return Promise<{ list: PostDetail[], total: number }> 分页视频帖子数据
  */
 export interface RelatedVideosResponse {
-  list: PostDetail[]
-  total: number
+  code: number
+  msg: string
+  data: {
+    records: number[]
+    total: number
+    size: number
+    current: number
+    pages: number
+  }
 }
 
-export function fetchRelatedVideos(
-  postId: number,
-  page: number = 1,
-  limit: number = 5,
-): Promise<RelatedVideosResponse> {
+export function fetchRelatedVideos(postId: number, page: number): Promise<number[]> {
   return request
-    .get('/posts/related-videos', {
-      params: {
-        postId,
-        page,
-        limit,
-      },
+    .get('http://localhost:8888/posts/recommendNext', {
+      postId,
+      page,
     })
     .then((res) => {
       console.log('相关视频API响应:', res)
-      const data = res.data
-
-      // 如果data已经包含list和total，直接返回
-      if (data && typeof data === 'object' && 'list' in data && 'total' in data) {
-        return data as RelatedVideosResponse
-      }
-
-      // 如果data是数组（旧格式），包装成新格式
-      if (Array.isArray(data)) {
-        return {
-          list: data,
-          total: data.length,
-        }
-      }
-
-      // 兜底返回空数据
-      return {
-        list: [],
-        total: 0,
-      }
+      const data = res.data.records
+      return data
     })
     .catch((err) => {
       console.error('获取相关视频失败', err)
