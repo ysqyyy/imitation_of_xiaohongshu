@@ -83,14 +83,14 @@ const defaultAvatar = '/src/assets/logo.svg' // 默认头像
 onMounted(() => {
   checkLoginStatus()
 
-  // 检查是否需要显示登录弹窗（从路由守卫设置）
-  const shouldShowLoginModal = localStorage.getItem('showLoginModal')
-  if (shouldShowLoginModal === 'true') {
-    showLoginModal.value = true
-    console.log('显示登录弹窗，因为路由守卫设置了标记')
-    // 清除标记，避免重复显示
-    localStorage.removeItem('showLoginModal')
-  }
+  // // 检查是否需要显示登录弹窗（从路由守卫设置）
+  // const shouldShowLoginModal = localStorage.getItem('showLoginModal')
+  // if (shouldShowLoginModal === 'true') {
+  //   showLoginModal.value = true
+  //   console.log('显示登录弹窗，因为路由守卫设置了标记')
+  //   // 清除标记，避免重复显示
+  //   localStorage.removeItem('showLoginModal')
+  // }
 })
 
 // 监听路由变化，检查登录状态
