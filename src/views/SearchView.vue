@@ -122,6 +122,13 @@ function selectCategory(idx: number) {
 }
 </script>
 
+<script lang="ts">
+// 添加组件名称以支持keep-alive缓存
+export default {
+  name: 'SearchView',
+}
+</script>
+
 <style scoped>
 .layout {
   display: flex;

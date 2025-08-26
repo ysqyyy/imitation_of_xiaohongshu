@@ -39,7 +39,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onActivated, onDeactivated } from 'vue'
 import { fetchRecommendPosts, fetchMyRecommendPosts } from '@/api/posts'
 import PostList from '@/components/PostList.vue'
 import type { PostCard as PostCardType } from '@/types'
@@ -153,6 +153,18 @@ onMounted(async () => {
   }
 })
 
+// keep-alive 生命周期钩子
+onActivated(() => {
+  console.log('HomeView 组件已激活（从缓存中恢复）')
+  // 可以在这里检查是否需要刷新数据
+  // 例如：检查数据是否过期，如果过期则重新加载
+})
+
+onDeactivated(() => {
+  console.log('HomeView 组件已停用（保存到缓存）')
+  // 可以在这里保存一些状态信息
+})
+
 function switchTab(tab: 'hot' | 'personal') {
   if (activeTab.value !== tab) {
     activeTab.value = tab
@@ -164,6 +176,13 @@ function switchTab(tab: 'hot' | 'personal') {
       loadPosts(1)
     }
   }
+}
+</script>
+
+<script lang="ts">
+// 添加组件名称以支持keep-alive缓存
+export default {
+  name: 'HomeView',
 }
 </script>
 

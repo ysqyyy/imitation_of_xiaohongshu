@@ -9,7 +9,14 @@
         @click="handleGoDetail(post.id)"
       >
         <div class="post-img-wrap">
-          <img :src="post.img" class="post-img" alt="帖子图片" />
+          <img
+            :src="post.img"
+            alt="帖子图片"
+            class="post-img"
+            loading="lazy"
+            decoding="async"
+            @error="onImageError"
+          />
           <!-- 视频播放图标 - 只在类型为视频时显示 -->
           <div v-if="post.type === 'video'" class="video-play-icon">
             <svg viewBox="0 0 24 24" width="32" height="32" fill="white">
@@ -30,7 +37,14 @@
 
         <div class="post-meta">
           <div class="author-info">
-            <img :src="post.author.img" alt="作者头像" class="author-avatar" />
+            <img
+              :src="post.author.img"
+              alt="作者头像"
+              class="author-avatar"
+              loading="lazy"
+              decoding="async"
+              @error="onImageError"
+            />
             <span class="post-author">{{ post.author.name }}</span>
           </div>
           <LikeButton
@@ -83,6 +97,15 @@ const emit = defineEmits<{
 // 滚动观察目标元素
 const loadMoreTrigger = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
+
+// 图片加载错误处理
+const onImageError = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  // 设置一个默认的错误图片
+  img.src =
+    'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjVGNUY1Ii8+CjxwYXRoIGQ9Ik04MCA4MEwxMjAgMTIwTTEyMCA4MEw4MCAxMjAiIHN0cm9rZT0iI0NDQyIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+'
+  img.style.opacity = '0.5'
+}
 
 // 跳转到详情页
 function handleGoDetail(id: number) {
@@ -276,8 +299,11 @@ export default {}
 .post-img {
   width: 100%;
   height: 100%;
-  object-fit: cover; /* 确保图片覆盖整个容器并保持比例 */
+  object-fit: cover;
   display: block;
+  /* 添加加载效果 */
+  transition: opacity 0.3s ease;
+  background-color: #f5f5f5;
 }
 
 .post-desc {
@@ -334,6 +360,10 @@ export default {}
   height: 24px;
   border-radius: 50%;
   object-fit: cover;
+  overflow: hidden;
+  /* 添加加载效果 */
+  background-color: #f5f5f5;
+  transition: opacity 0.3s ease;
 }
 
 /* 加载更多触发器样式 */

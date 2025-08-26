@@ -160,8 +160,8 @@ import { ref, onMounted, reactive } from 'vue'
 import type { UserInfo, PostCard } from '../types'
 import { getUserInfo, updateUserInfo, updatePassword } from '../api/user'
 import PostList from '../components/PostList.vue'
-const defaultAvatar = '/src/assets/logo.svg'
 import FollowList from '../components/FollowList.vue'
+const defaultAvatar = '/src/assets/logo.svg'
 const currentUserId = ref<number | undefined>(undefined)
 // 用户信息响应式数据
 const user = ref<UserInfo>({
@@ -357,6 +357,13 @@ function getGenderClass(gender: number | undefined | null) {
   if (gender === 1) return 'male'
   if (gender === 2) return 'female'
   return 'unknown'
+}
+</script>
+
+<script lang="ts">
+// 添加组件名称以支持keep-alive缓存
+export default {
+  name: 'MyHomeView',
 }
 </script>
 

@@ -169,6 +169,13 @@ function getEmptyText() {
 }
 </script>
 
+<script lang="ts">
+// 添加组件名称以支持keep-alive缓存
+export default {
+  name: 'UserView',
+}
+</script>
+
 <style scoped>
 .layout {
   display: flex;

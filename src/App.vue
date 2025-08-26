@@ -47,7 +47,16 @@
         </div>
       </header>
       <div class="main-content">
-        <RouterView />
+        <!-- 路由级缓存：使用动态include控制缓存的组件 -->
+        <keep-alive :include="cachedRoutes" :max="5">
+          <RouterView v-slot="{ Component, route }">
+            <component
+              :is="Component"
+              :key="getCacheKey(route)"
+              @refresh-needed="handleRefreshNeeded"
+            />
+          </RouterView>
+        </keep-alive>
       </div>
       <DetailView.default v-if="showDetail" :id="detailId" />
       <PublishView.default v-if="showPublish" @close="closePublishModal" />
@@ -59,7 +68,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { RouterLink, RouterView, useRouter, useRoute } from 'vue-router'
 import * as DetailView from './views/DetailView.vue'
 import * as PublishView from './views/PublishView.vue'
@@ -71,6 +80,59 @@ const route = useRoute()
 
 const keyword = ref('')
 const showLoginModal = ref(false)
+
+// 路由缓存配置
+const cachedRoutes = ref<string[]>([
+  'HomeView', // 首页推荐
+  'SearchView', // 搜索页面
+  'MyHomeView', // 我的主页
+  'UserView', // 用户详情页
+])
+
+// 生成缓存键值
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getCacheKey(currentRoute: any): string {
+  const routeName = typeof currentRoute.name === 'string' ? currentRoute.name : 'default'
+  const routeToComponentMap: Record<string, string> = {
+    home: 'HomeView',
+    search: 'SearchView',
+    myhome: 'MyHomeView',
+    user: 'UserView',
+  }
+  const componentName = routeToComponentMap[routeName] || routeName
+
+  // 对于用户页面，包含用户ID以区分不同用户
+  if (routeName === 'user' && currentRoute.params?.id) {
+    const userId = Array.isArray(currentRoute.params.id)
+      ? currentRoute.params.id[0]
+      : currentRoute.params.id
+    return `${componentName}-${userId}`
+  }
+
+  // 对于搜索页面，包含关键词以区分不同搜索
+  if (routeName === 'search' && currentRoute.query?.keyword) {
+    const keyword = Array.isArray(currentRoute.query.keyword)
+      ? currentRoute.query.keyword[0]
+      : currentRoute.query.keyword
+    return `${componentName}-${keyword}`
+  }
+
+  return componentName
+}
+
+// 处理组件的刷新需求
+function handleRefreshNeeded(routeName: string) {
+  if (routeName && cachedRoutes.value.includes(routeName)) {
+    // 临时移除缓存以强制刷新
+    const index = cachedRoutes.value.indexOf(routeName)
+    cachedRoutes.value.splice(index, 1)
+
+    // 下一个tick重新添加到缓存
+    nextTick(() => {
+      cachedRoutes.value.push(routeName!)
+    })
+  }
+}
 
 // 用户信息相关
 const isLoggedIn = ref(false)

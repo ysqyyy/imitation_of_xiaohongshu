@@ -171,6 +171,8 @@
 <script setup lang="ts">
 import { ref, computed, defineEmits, defineProps, onMounted } from 'vue'
 import { publishPost as apiPublishPost, editPost as apiEditPost } from '../api/detail'
+import { checkContentSafety, escapeHTML, type ContentCheckResult } from '../utils/contentFilter'
+import { getSecurityConfig } from '../utils/securityConfig'
 
 const props = defineProps({
   editMode: {
@@ -210,6 +212,11 @@ const availableTags = ref(['美食', '旅行', '穿搭', '数码', '学习', '�
 // 发布状态
 const publishing = ref(false)
 const postId = ref<number | null>(null)
+
+// 内容安全检查相关
+const contentErrors = ref<ContentCheckResult | null>(null)
+const titleErrors = ref<ContentCheckResult | null>(null)
+const securityConfig = getSecurityConfig()
 
 // 判断是否可以发布
 const canPublish = computed(() => {
@@ -257,6 +264,12 @@ onMounted(() => {
   }
 })
 
+// 验证所有内容
+function validateContent() {
+  titleErrors.value = checkContentSafety(postData.value.title, securityConfig.maxTitleLength)
+  contentErrors.value = checkContentSafety(postData.value.content, securityConfig.maxContentLength)
+}
+
 // 切换内容类型（图片/视频）
 function switchContentType(type: 'image' | 'video') {
   // 如果已经有内容，提示用户
@@ -287,7 +300,7 @@ function triggerImageUpload() {
 function handleImageUpload(event: Event) {
   const input = event.target as HTMLInputElement
   if (input.files) {
-    const remainingSlots = 9 - selectedImages.value.length
+    const remainingSlots = securityConfig.maxImageCount - selectedImages.value.length
     const filesToProcess = Math.min(input.files.length, remainingSlots)
 
     // 检查图片数量
@@ -299,13 +312,16 @@ function handleImageUpload(event: Event) {
     for (let i = 0; i < filesToProcess; i++) {
       const file = input.files[i]
       // 检查文件类型
-      if (!file.type.startsWith('image/')) {
-        alert(`文件 "${file.name}" 不是有效的图片类型`)
+      if (!securityConfig.allowedImageTypes.includes(file.type)) {
+        alert(`文件 "${file.name}" 不是支持的图片类型`)
         continue
       }
-      // 检查文件大小 (限制为10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        alert(`图片 "${file.name}" 大小超过10MB，请压缩后再上传`)
+
+      // 检查文件大小
+      if (file.size > securityConfig.maxImageSize) {
+        alert(
+          `图片 "${file.name}" 大小超过${Math.round(securityConfig.maxImageSize / 1024 / 1024)}MB，请压缩后再上传`,
+        )
         continue
       }
       const reader = new FileReader()
@@ -348,15 +364,17 @@ function handleVideoUpload(event: Event) {
   if (input.files && input.files.length > 0) {
     const file = input.files[0]
 
-    // 检查文件大小（限制为100MB）
-    if (file.size > 100 * 1024 * 1024) {
-      alert('视频文件过大，请上传小于100MB的视频')
+    // 检查文件类型
+    if (!securityConfig.allowedVideoTypes.includes(file.type)) {
+      alert('请上传支持的视频文件格式 (MP4, AVI, MOV, WMV)')
       return
     }
 
-    // 检查文件类型
-    if (!file.type.startsWith('video/')) {
-      alert('请上传有效的视频文件')
+    // 检查文件大小
+    if (file.size > securityConfig.maxVideoSize) {
+      alert(
+        `视频文件过大，请上传小于${Math.round(securityConfig.maxVideoSize / 1024 / 1024)}MB的视频`,
+      )
       return
     }
 
@@ -398,12 +416,24 @@ function removeTag(index: number) {
 // 发布帖子
 async function submitPost() {
   if (!canPublish.value || publishing.value) return
+  validateContent()
+
+  if (!contentErrors.value?.isValid || !titleErrors.value?.isValid) {
+    const errorMsg =
+      contentErrors.value?.errorMessage ||
+      titleErrors.value?.errorMessage ||
+      '内容包含不当信息，请修改后重试'
+    alert(errorMsg)
+    return
+  }
 
   publishing.value = true
   try {
     const formData = new FormData()
-    formData.append('title', postData.value.title)
-    formData.append('content', postData.value.content)
+    // 对用户输入进行转义处理
+    formData.append('title', escapeHTML(postData.value.title.trim()))
+    formData.append('content', escapeHTML(postData.value.content.trim()))
+
     if (postData.value.tags && postData.value.tags.length > 0) {
       // 去除引号，将标签数组转换为字符串形式 [旅游,]
       const tagsString = postData.value.tags.join(',')
