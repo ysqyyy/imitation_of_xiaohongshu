@@ -1,6 +1,5 @@
 import OSS from 'ali-oss'
 
-// ⚠️ 警告：此方案仅用于本地测试，切勿用于生产环境！
 const OSS_CONFIG = {
   region: 'oss-cn-beijing', // 替换为你的OSS区域
   accessKeyId: '', // 替换为你的AccessKey ID
